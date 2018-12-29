@@ -173,7 +173,7 @@ class Toast {
       this._element.classList.add(ClassName.HIDE)
       $(this._element).trigger(Event.HIDDEN)
     }
-
+ 
     this._element.classList.remove(ClassName.SHOW)
     if (this._config.animation) {
       const transitionDuration = Util.getTransitionDurationFromElement(this._element)
