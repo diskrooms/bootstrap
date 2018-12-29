@@ -61,6 +61,7 @@ class Toast {
   constructor(element, config) {
     this._element = element
     this._config  = this._getConfig(config)
+    //console.log(this._config)
     this._timeout = null
     this._setListeners()
   }
@@ -78,13 +79,13 @@ class Toast {
   // Public
 
   show() {
-    $(this._element).trigger(Event.SHOW)
+    $(this._element).trigger(Event.SHOW)			//show动作开始初始化时 触发
 
     if (this._config.animation) {
       this._element.classList.add(ClassName.FADE)
     }
 
-    const complete = () => {
+    const complete = () => {						//窗口显示完毕后触发
       this._element.classList.remove(ClassName.SHOWING)
       this._element.classList.add(ClassName.SHOW)
 
@@ -138,6 +139,8 @@ class Toast {
     this._element = null
     this._config  = null
   }
+  
+  
 
   // Private
 
@@ -189,21 +192,68 @@ class Toast {
     return this.each(function () {
       const $element = $(this)
       let data       = $element.data(DATA_KEY)
-      const _config  = typeof config === 'object' && config
-
+      const _config  = typeof config === 'object' && config		//config不是对象 _config则为false
       if (!data) {
         data = new Toast(this, _config)
-        $element.data(DATA_KEY, data)
+        $element.data(DATA_KEY, data)							//还可以把一个对象添加到元素上
+        //console.log($element.data(DATA_KEY))
       }
-
+      
       if (typeof config === 'string') {
         if (typeof data[config] === 'undefined') {
           throw new TypeError(`No method named "${config}"`)
         }
-
-        data[config](this)
+        data[config](this)										//执行 public方法
       }
     })
+  }
+  
+  /**
+   * static 方法内的this并不一定指向类本身 还需要看调用者是谁
+   */
+  static _jQueryGlobalInterface(style,options){
+	  //参数过滤
+	  if(style == null){
+		  style = 'success'
+		  options = {}
+	  } else if(typeof style === 'object'){
+		  style = 'success'
+		  options = style
+	  }
+	  
+	  let msg = ''
+	  switch(style){
+	  	case 'success':
+	  		msg = options.msg || '成功';
+	  		break;
+	  	case 'warning':
+	  		msg = options.msg || '警告';
+	  		break;
+	  	case 'info':
+	  		msg = options.msg || '提示';
+	  		break;
+	  	case 'danger':
+	  		msg = options.msg || '错误';
+	  		break;
+	  	default:
+	  		throw new TypeError(`No style named "${style}"`)
+	  		break;
+	  }
+	  
+	  if(!this.__init){				//this是jQuery对象
+		  let _config_tpl = `<div class="alert alert-toast alert-${style} alert-dismissible"><span><i class="icon fa fa-check"></i></span>${msg} !</div>`
+		  //let _config_tpl = `<div id="toast-container" class="toast-center-center"><div class="toast toast-success" aria-live="polite" style="opacity: 0.15;"><div class="toast-message">${msg}</div></div></div>`;
+		  let _tpl = (typeof options === 'object')  ? (options.tpl || _config_tpl) : _config_tpl;
+		  let $toast  = $(_tpl);
+		  $('body').append($toast.addClass('fade in'))
+		  $toast.toast({'delay':1500})
+		  $toast.toast('show')
+		  this.__init = 1;
+		  this._element  = $toast
+	  } else {
+		  this._element.toast('show')
+	  }
+	  
   }
 }
 
@@ -213,11 +263,12 @@ class Toast {
  * ------------------------------------------------------------------------
  */
 
-$.fn[NAME]             = Toast._jQueryInterface
+$.fn[NAME]             = Toast._jQueryInterface		//jQuery插件与该模块的桥梁
 $.fn[NAME].Constructor = Toast
 $.fn[NAME].noConflict  = () => {
   $.fn[NAME] = JQUERY_NO_CONFLICT
   return Toast._jQueryInterface
 }
+$[NAME]				   = Toast._jQueryGlobalInterface
 
 export default Toast
