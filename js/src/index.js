@@ -10,6 +10,7 @@ import Scrollspy from './scrollspy'
 import Tab from './tab'
 import Toast from './toast'
 import Tooltip from './tooltip'
+import Loading from './loading'
 import Util from './util'
 
 /**
