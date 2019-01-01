@@ -11,6 +11,7 @@ import Tab from './tab'
 import Toast from './toast'
 import Tooltip from './tooltip'
 import Loading from './loading'
+import Upload from './upload'
 import Util from './util'
 
 /**
@@ -49,5 +50,6 @@ export {
   Scrollspy,
   Tab,
   Toast,
-  Tooltip
+  Tooltip,
+  Upload
 }
