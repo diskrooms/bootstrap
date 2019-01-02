@@ -14,18 +14,14 @@ import Util from './util'
  * ------------------------------------------------------------------------
  */
 
-const NAME               = 'toast'
+const NAME               = 'loading'
 const VERSION            = '4.2.1'
-const DATA_KEY           = 'bs.toast'
+const DATA_KEY           = 'bs.loading'
 const EVENT_KEY          = `.${DATA_KEY}`
 const JQUERY_NO_CONFLICT = $.fn[NAME]
 
 const Event = {
   CLICK_DISMISS : `click.dismiss${EVENT_KEY}`,
-  HIDE          : `hide${EVENT_KEY}`,
-  HIDDEN        : `hidden${EVENT_KEY}`,
-  SHOW          : `show${EVENT_KEY}`,
-  SHOWN         : `shown${EVENT_KEY}`
 }
 
 const ClassName = {
@@ -47,9 +43,6 @@ const Default = {
   delay     : 500
 }
 
-const Selector = {
-  DATA_DISMISS : '[data-dismiss="toast"]'
-}
 
 /**
  * ------------------------------------------------------------------------
@@ -57,13 +50,12 @@ const Selector = {
  * ------------------------------------------------------------------------
  */
 
-class Toast {
+class Loading {
   constructor(element, config) {
     this._element = element
     this._config  = this._getConfig(config)
     //console.log(this._config)
     this._timeout = null
-    this._setListeners()
   }
 
   // Getters
@@ -79,71 +71,37 @@ class Toast {
   // Public
 
   show() {
-    $(this._element).trigger(Event.SHOW)			//show动作开始初始化时 触发
-
     if (this._config.animation) {
-      this._element.classList.add(ClassName.FADE)
+      //console.log(this._element)
+      this._element[0].classList.add(ClassName.FADE)
     }
 
     const complete = () => {						//窗口显示完毕后触发
-      this._element.classList.remove(ClassName.SHOWING)
-      this._element.classList.add(ClassName.SHOW)
-
-      $(this._element).trigger(Event.SHOWN)
-
-      if (this._config.autohide) {
-        this.hide()
-      }
+      this._element[0].classList.remove(ClassName.SHOWING)
+      this._element[0].classList.add(ClassName.SHOW)
     }
 
-    this._element.classList.remove(ClassName.HIDE)
-    this._element.classList.add(ClassName.SHOWING)
+    this._element[0].classList.remove(ClassName.HIDE)
+    this._element[0].classList.add(ClassName.SHOWING)
     if (this._config.animation) {
       const transitionDuration = Util.getTransitionDurationFromElement(this._element)
-
-      $(this._element)
-        .one(Util.TRANSITION_END, complete)
-        .emulateTransitionEnd(transitionDuration)
+      $(this._element).one(Util.TRANSITION_END, complete).emulateTransitionEnd(transitionDuration)
     } else {
       complete()
     }
   }
 
-  hide(withoutTimeout) {
-    if (!this._element.classList.contains(ClassName.SHOW)) {
+  //隐藏方法
+  hide() {
+    if (!this._element[0].classList.contains(ClassName.SHOW)) {
       return
     }
-
-    $(this._element).trigger(Event.HIDE)
-
-    if (withoutTimeout) {
-      this._close()
-    } else {
-      this._timeout = setTimeout(() => {
-        this._close()
-      }, this._config.delay)
-    }
+    this._close()
   }
 
-  dispose() {
-    clearTimeout(this._timeout)
-    this._timeout = null
-
-    if (this._element.classList.contains(ClassName.SHOW)) {
-      this._element.classList.remove(ClassName.SHOW)
-    }
-
-    $(this._element).off(Event.CLICK_DISMISS)
-
-    $.removeData(this._element, DATA_KEY)
-    this._element = null
-    this._config  = null
-  }
-  
   
 
   // Private
-
   _getConfig(config) {
     config = {
       ...Default,
@@ -160,42 +118,29 @@ class Toast {
     return config
   }
 
-  _setListeners() {
-    $(this._element).on(
-      Event.CLICK_DISMISS,
-      Selector.DATA_DISMISS,
-      () => this.hide(true)
-    )
-  }
 
   _close() {
     const complete = () => {
       this._element.classList.add(ClassName.HIDE)
-      $(this._element).trigger(Event.HIDDEN)
     }
- 
     this._element.classList.remove(ClassName.SHOW)
+    
     if (this._config.animation) {
       const transitionDuration = Util.getTransitionDurationFromElement(this._element)
-
-      $(this._element)
-        .one(Util.TRANSITION_END, complete)
-        .emulateTransitionEnd(transitionDuration)
+      $(this._element).one(Util.TRANSITION_END, complete).emulateTransitionEnd(transitionDuration)
     } else {
       complete()
     }
   }
-
+  
   // Static
-
   static _jQueryInterface(config) {
-    return this.each(function () {
-      const $element = $(this)
+	  const $element = $(this)
       let data       = $element.data(DATA_KEY)
-      const _config  = typeof config === 'object' && config		//config不是对象 _config则为false
+      const _config  = typeof config === 'object' && config		
       if (!data) {
-        data = new Toast(this, _config)
-        $element.data(DATA_KEY, data)							//还可以把一个对象添加到元素上
+        data = new Loading(this, _config)
+        $element.data(DATA_KEY, data)							
         //console.log($element.data(DATA_KEY))
       }
       
@@ -203,53 +148,44 @@ class Toast {
         if (typeof data[config] === 'undefined') {
           throw new TypeError(`No method named "${config}"`)
         }
-        data[config](this)										//执行 public方法
+        data[config](this)										
       }
-    })
   }
   
-  /**
-   * static 方法内的this并不一定指向类本身 还需要看调用者是谁
-   */
-  static _jQueryGlobalInterface(style,options){
+  static _jQueryGlobalInterface(action,options){
 	  //参数过滤
-	  if(style == null){
-		  style = 'success'
+	  if(action == null){
+		  action = 'start'
 		  options = {}
-	  } else if(typeof style === 'object'){
-		  style = 'success'
-		  options = style
+	  } else if(typeof action === 'object'){
+		  action = 'start'
+		  options = action
+	  }
+	  if(action = 'start'){
+		  let defaults = {
+	            opacity: 1,									//loading页面透明度
+	            backgroundColor: "#000000c0",				//loading页面背景色
+	            borderColor: "#bbb",						//提示边框颜色
+	            borderWidth: 1,								//提示边框宽度
+	            borderStyle: "solid",						//提示边框样式
+	            loadingTips: "Loading, please wait...",		//提示文本
+	            TipsColor: "#ff922b",						//提示颜色
+	            delayTime: 1000,							//页面加载完成后，加载页面渐出速度
+	            zindex: 999,								//loading页面层次
+	            sleep: 0									//设置挂起,等于0时则无需挂起
+	      }
+	      options = $.extend(defaults, options);
 	  }
 	  
-	  let msg = ''
-	  switch(style){
-	  	case 'success':
-	  		msg = options.msg || '成功';
-	  		break;
-	  	case 'warning':
-	  		msg = options.msg || '警告';
-	  		break;
-	  	case 'info':
-	  		msg = options.msg || '提示';
-	  		break;
-	  	case 'danger':
-	  		msg = options.msg || '错误';
-	  		break;
-	  	default:
-	  		throw new TypeError(`No style named "${style}"`)
-	  		break;
-	  }
-	  
-	  if(!this.__init){				//this是jQuery对象
-		  let _config_tpl = `<div class="alert alert-toast alert-${style} alert-dismissible"><span><i class="icon fa fa-check"></i></span>${msg} !</div>`
-		  //let _config_tpl = `<div id="toast-container" class="toast-center-center"><div class="toast toast-success" aria-live="polite" style="opacity: 0.15;"><div class="toast-message">${msg}</div></div></div>`;
+	  if(!this.__init_loading){
+		  let _PageHeight = document.documentElement.clientHeight,_PageWidth = document.documentElement.clientWidth;
+		  let _config_tpl = `<div id="loadingPage" style="position:fixed;left:0;top:0;_position: absolute;width:100%;height:${_PageHeight}px;background:${options.backgroundColor};opacity:${options.opacity};filter:alpha(opacity=${options.opacity} * 100);z-index:${options.zindex};"><div id="loadingTips" style="position: absolute; cursor1: wait; width: auto; height:40px; line-height:40px;border-radius:10px; color:${options.TipsColor};font-size:20px;">${options.loadingTips}</div></div>`
 		  let _tpl = (typeof options === 'object')  ? (options.tpl || _config_tpl) : _config_tpl;
-		  let $toast  = $(_tpl);
-		  $('body').append($toast.addClass('fade in'))
-		  $toast.toast({'delay':1500})
-		  $toast.toast('show')
-		  this.__init = 1;
-		  this._element  = $toast
+		  let $loading  = $(_tpl);
+		  $('body').append($loading.addClass('fade in'))
+		  $loading.loading('show')
+		  this.__init_loading = 1;
+		  this._element  = $loading
 	  } else {
 		  this._element.toast('show')
 	  }
@@ -262,13 +198,12 @@ class Toast {
  * jQuery
  * ------------------------------------------------------------------------
  */
-
-$.fn[NAME]             = Toast._jQueryInterface		//jQuery插件与该模块的桥梁
-$.fn[NAME].Constructor = Toast
+/*$.fn[NAME]             = Loading._jQueryInterface		//jQuery插件与该模块的桥梁
+$.fn[NAME].Constructor = Loading
 $.fn[NAME].noConflict  = () => {
   $.fn[NAME] = JQUERY_NO_CONFLICT
-  return Toast._jQueryInterface
+  return Loading._jQueryInterface
 }
-$[NAME]				   = Toast._jQueryGlobalInterface
+$[NAME]				   = Loading._jQueryGlobalInterface*/
 
-export default Toast
+export default Loading

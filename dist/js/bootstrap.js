@@ -1,16 +1,16 @@
 /*!
   * Bootstrap v4.2.1 (https://getbootstrap.com/)
-  * Copyright 2011-2018 The Bootstrap Authors (https://github.com/twbs/bootstrap/graphs/contributors)
+  * Copyright 2011-2019 The Bootstrap Authors (https://github.com/twbs/bootstrap/graphs/contributors)
   * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
   */
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('popper.js'), require('jquery')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'popper.js', 'jquery'], factory) :
-  (factory((global.bootstrap = {}),global.Popper,global.jQuery));
-}(this, (function (exports,Popper,$) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('jquery'), require('popper.js')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'jquery', 'popper.js'], factory) :
+  factory(global.bootstrap = {},global.jQuery,global.Popper);
+}(typeof self !== 'undefined' ? self : this, function (exports,$,Popper) { 'use strict';
 
-  Popper = Popper && Popper.hasOwnProperty('default') ? Popper['default'] : Popper;
   $ = $ && $.hasOwnProperty('default') ? $['default'] : $;
+  Popper = Popper && Popper.hasOwnProperty('default') ? Popper['default'] : Popper;
 
   function _defineProperties(target, props) {
     for (var i = 0; i < props.length; i++) {
@@ -146,7 +146,11 @@
         selector = hrefAttr && hrefAttr !== '#' ? hrefAttr.trim() : '';
       }
 
-      return selector && document.querySelector(selector) ? selector : null;
+      try {
+        return document.querySelector(selector) ? selector : null;
+      } catch (err) {
+        return null;
+      }
     },
     getTransitionDurationFromElement: function getTransitionDurationFromElement(element) {
       if (!element) {
@@ -281,8 +285,8 @@
     _proto.dispose = function dispose() {
       $.removeData(this._element, DATA_KEY);
       this._element = null;
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._getRootElement = function _getRootElement(element) {
       var selector = Util.getSelectorFromElement(element);
@@ -324,8 +328,8 @@
 
     _proto._destroyElement = function _destroyElement(element) {
       $(element).detach().trigger(Event.CLOSED).remove();
-    }; // Static
-
+    } // Static
+    ;
 
     Alert._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
@@ -477,8 +481,8 @@
     _proto.dispose = function dispose() {
       $.removeData(this._element, DATA_KEY$1);
       this._element = null;
-    }; // Static
-
+    } // Static
+    ;
 
     Button._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
@@ -740,8 +744,8 @@
       this._isSliding = null;
       this._activeElement = null;
       this._indicatorsElement = null;
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._getConfig = function _getConfig(config) {
       config = _objectSpread({}, Default, config);
@@ -1026,8 +1030,8 @@
       if (isCycling) {
         this.cycle();
       }
-    }; // Static
-
+    } // Static
+    ;
 
     Carousel._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
@@ -1365,8 +1369,8 @@
       this._element = null;
       this._triggerArray = null;
       this._isTransitioning = null;
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._getConfig = function _getConfig(config) {
       config = _objectSpread({}, Default$1, config);
@@ -1410,8 +1414,8 @@
       if (triggerArray.length) {
         $(triggerArray).toggleClass(ClassName$3.COLLAPSED, !isOpen).attr('aria-expanded', isOpen);
       }
-    }; // Static
-
+    } // Static
+    ;
 
     Collapse._getTargetFromElement = function _getTargetFromElement(element) {
       var selector = Util.getSelectorFromElement(element);
@@ -1732,8 +1736,8 @@
       if (this._popper !== null) {
         this._popper.scheduleUpdate();
       }
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._addEventListeners = function _addEventListeners() {
       var _this = this;
@@ -1824,8 +1828,8 @@
       }
 
       return popperConfig;
-    }; // Static
-
+    } // Static
+    ;
 
     Dropdown._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
@@ -1909,8 +1913,8 @@
       }
 
       return parent || element.parentNode;
-    }; // eslint-disable-next-line complexity
-
+    } // eslint-disable-next-line complexity
+    ;
 
     Dropdown._dataApiKeydownHandler = function _dataApiKeydownHandler(event) {
       // If not input/textarea:
@@ -2218,8 +2222,8 @@
 
     _proto.handleUpdate = function handleUpdate() {
       this._adjustDialog();
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._getConfig = function _getConfig(config) {
       config = _objectSpread({}, Default$3, config);
@@ -2413,11 +2417,11 @@
       } else if (callback) {
         callback();
       }
-    }; // ----------------------------------------------------------------------
+    } // ----------------------------------------------------------------------
     // the following methods are used to handle overflowing modals
     // todo (fat): these should probably be refactored out of modal.js
     // ----------------------------------------------------------------------
-
+    ;
 
     _proto._adjustDialog = function _adjustDialog() {
       var isModalOverflowing = this._element.scrollHeight > document.documentElement.clientHeight;
@@ -2502,8 +2506,8 @@
       var scrollbarWidth = scrollDiv.getBoundingClientRect().width - scrollDiv.clientWidth;
       document.body.removeChild(scrollDiv);
       return scrollbarWidth;
-    }; // Static
-
+    } // Static
+    ;
 
     Modal._jQueryInterface = function _jQueryInterface(config, relatedTarget) {
       return this.each(function () {
@@ -2936,8 +2940,8 @@
       if (this._popper !== null) {
         this._popper.scheduleUpdate();
       }
-    }; // Protected
-
+    } // Protected
+    ;
 
     _proto.isWithContent = function isWithContent() {
       return Boolean(this.getTitle());
@@ -2983,8 +2987,8 @@
       }
 
       return title;
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._getContainer = function _getContainer() {
       if (this.config.container === false) {
@@ -3188,8 +3192,8 @@
       this.hide();
       this.show();
       this.config.animation = initConfigAnimation;
-    }; // Static
-
+    } // Static
+    ;
 
     Tooltip._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
@@ -3360,8 +3364,8 @@
 
       this.setElementContent($tip.find(Selector$7.CONTENT), content);
       $tip.removeClass(ClassName$7.FADE + " " + ClassName$7.SHOW);
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._getContent = function _getContent() {
       return this.element.getAttribute('data-content') || this.config.content;
@@ -3374,8 +3378,8 @@
       if (tabClass !== null && tabClass.length > 0) {
         $tip.removeClass(tabClass.join(''));
       }
-    }; // Static
-
+    } // Static
+    ;
 
     Popover._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
@@ -3587,8 +3591,8 @@
       this._targets = null;
       this._activeTarget = null;
       this._scrollHeight = null;
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._getConfig = function _getConfig(config) {
       config = _objectSpread({}, Default$6, typeof config === 'object' && config ? config : {});
@@ -3695,8 +3699,8 @@
       }).forEach(function (node) {
         return node.classList.remove(ClassName$8.ACTIVE);
       });
-    }; // Static
-
+    } // Static
+    ;
 
     ScrollSpy._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
@@ -3879,8 +3883,8 @@
     _proto.dispose = function dispose() {
       $.removeData(this._element, DATA_KEY$9);
       this._element = null;
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._activate = function _activate(element, container, callback) {
       var _this2 = this;
@@ -3938,8 +3942,8 @@
       if (callback) {
         callback();
       }
-    }; // Static
-
+    } // Static
+    ;
 
     Tab._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
@@ -4045,7 +4049,8 @@
   function () {
     function Toast(element, config) {
       this._element = element;
-      this._config = this._getConfig(config);
+      this._config = this._getConfig(config); //console.log(this._config)
+
       this._timeout = null;
 
       this._setListeners();
@@ -4058,13 +4063,14 @@
     _proto.show = function show() {
       var _this = this;
 
-      $(this._element).trigger(Event$a.SHOW);
+      $(this._element).trigger(Event$a.SHOW); //show动作开始初始化时 触发
 
       if (this._config.animation) {
         this._element.classList.add(ClassName$a.FADE);
       }
 
       var complete = function complete() {
+        //窗口显示完毕后触发
         _this._element.classList.remove(ClassName$a.SHOWING);
 
         _this._element.classList.add(ClassName$a.SHOW);
@@ -4118,8 +4124,8 @@
       $.removeData(this._element, DATA_KEY$a);
       this._element = null;
       this._config = null;
-    }; // Private
-
+    } // Private
+    ;
 
     _proto._getConfig = function _getConfig(config) {
       config = _objectSpread({}, Default$7, $(this._element).data(), typeof config === 'object' && config ? config : {});
@@ -4152,19 +4158,21 @@
       } else {
         complete();
       }
-    }; // Static
-
+    } // Static
+    ;
 
     Toast._jQueryInterface = function _jQueryInterface(config) {
       return this.each(function () {
         var $element = $(this);
         var data = $element.data(DATA_KEY$a);
 
-        var _config = typeof config === 'object' && config;
+        var _config = typeof config === 'object' && config; //config不是对象 _config则为false
+
 
         if (!data) {
           data = new Toast(this, _config);
-          $element.data(DATA_KEY$a, data);
+          $element.data(DATA_KEY$a, data); //还可以把一个对象添加到元素上
+          //console.log($element.data(DATA_KEY))
         }
 
         if (typeof config === 'string') {
@@ -4172,9 +4180,67 @@
             throw new TypeError("No method named \"" + config + "\"");
           }
 
-          data[config](this);
+          data[config](this); //执行 public方法
         }
       });
+    }
+    /**
+     * static 方法内的this并不一定指向类本身 还需要看调用者是谁
+     */
+    ;
+
+    Toast._jQueryGlobalInterface = function _jQueryGlobalInterface(style, options) {
+      //参数过滤
+      if (style == null) {
+        style = 'success';
+        options = {};
+      } else if (typeof style === 'object') {
+        style = 'success';
+        options = style;
+      }
+
+      var msg = '';
+
+      switch (style) {
+        case 'success':
+          msg = options.msg || '成功';
+          break;
+
+        case 'warning':
+          msg = options.msg || '警告';
+          break;
+
+        case 'info':
+          msg = options.msg || '提示';
+          break;
+
+        case 'danger':
+          msg = options.msg || '错误';
+          break;
+
+        default:
+          throw new TypeError("No style named \"" + style + "\"");
+          break;
+      }
+
+      if (!this.__init) {
+        //this是jQuery对象
+        var _config_tpl = "<div class=\"alert alert-toast alert-" + style + " alert-dismissible\"><span><i class=\"icon fa fa-check\"></i></span>" + msg + " !</div>"; //let _config_tpl = `<div id="toast-container" class="toast-center-center"><div class="toast toast-success" aria-live="polite" style="opacity: 0.15;"><div class="toast-message">${msg}</div></div></div>`;
+
+
+        var _tpl = typeof options === 'object' ? options.tpl || _config_tpl : _config_tpl;
+
+        var $toast = $(_tpl);
+        $('body').append($toast.addClass('fade in'));
+        $toast.toast({
+          'delay': 1500
+        });
+        $toast.toast('show');
+        this.__init = 1;
+        this._element = $toast;
+      } else {
+        this._element.toast('show');
+      }
     };
 
     _createClass(Toast, null, [{
@@ -4198,12 +4264,463 @@
    */
 
 
-  $.fn[NAME$a] = Toast._jQueryInterface;
+  $.fn[NAME$a] = Toast._jQueryInterface; //jQuery插件与该模块的桥梁
+
   $.fn[NAME$a].Constructor = Toast;
 
   $.fn[NAME$a].noConflict = function () {
     $.fn[NAME$a] = JQUERY_NO_CONFLICT$a;
     return Toast._jQueryInterface;
+  };
+
+  $[NAME$a] = Toast._jQueryGlobalInterface;
+
+  /**
+   * ------------------------------------------------------------------------
+   * Constants
+   * ------------------------------------------------------------------------
+   */
+
+  var NAME$b = 'loading';
+  var VERSION$b = '4.2.1';
+  var DATA_KEY$b = 'bs.loading';
+  var EVENT_KEY$b = "." + DATA_KEY$b;
+  var JQUERY_NO_CONFLICT$b = $.fn[NAME$b];
+  var Event$b = {
+    CLICK_DISMISS: "click.dismiss" + EVENT_KEY$b
+  };
+  var ClassName$b = {
+    FADE: 'fade',
+    HIDE: 'hide',
+    SHOW: 'show',
+    SHOWING: 'showing'
+  };
+  var DefaultType$8 = {
+    animation: 'boolean',
+    autohide: 'boolean',
+    delay: 'number'
+  };
+  var Default$8 = {
+    animation: true,
+    autohide: true,
+    delay: 500
+    /**
+     * ------------------------------------------------------------------------
+     * Class Definition
+     * ------------------------------------------------------------------------
+     */
+
+  };
+
+  var Loading =
+  /*#__PURE__*/
+  function () {
+    function Loading(element, config) {
+      this._element = element;
+      this._config = this._getConfig(config); //console.log(this._config)
+
+      this._timeout = null;
+    } // Getters
+
+
+    Loading.test = function test() {
+      console.log('abc');
+    } // Public
+    ;
+
+    var _proto = Loading.prototype;
+
+    _proto.show = function show() {
+      var _this = this;
+
+      if (this._config.animation) {
+        //console.log(this._element)
+        this._element[0].classList.add(ClassName$b.FADE);
+      }
+
+      var complete = function complete() {
+        //窗口显示完毕后触发
+        _this._element[0].classList.remove(ClassName$b.SHOWING);
+
+        _this._element[0].classList.add(ClassName$b.SHOW);
+      };
+
+      this._element[0].classList.remove(ClassName$b.HIDE);
+
+      this._element[0].classList.add(ClassName$b.SHOWING);
+
+      if (this._config.animation) {
+        var transitionDuration = Util.getTransitionDurationFromElement(this._element);
+        $(this._element).one(Util.TRANSITION_END, complete).emulateTransitionEnd(transitionDuration);
+      } else {
+        complete();
+      }
+    } //隐藏方法
+    ;
+
+    _proto.hide = function hide() {
+      if (!this._element[0].classList.contains(ClassName$b.SHOW)) {
+        return;
+      }
+
+      this._close();
+    } //初始化
+    ;
+
+    _proto.dispose = function dispose() {
+      clearTimeout(this._timeout);
+      this._timeout = null;
+
+      if (this._element.classList.contains(ClassName$b.SHOW)) {
+        this._element.classList.remove(ClassName$b.SHOW);
+      }
+
+      $(this._element).off(Event$b.CLICK_DISMISS);
+      $.removeData(this._element, DATA_KEY$b);
+      this._element = null;
+      this._config = null;
+    } // Private
+    ;
+
+    _proto._getConfig = function _getConfig(config) {
+      config = _objectSpread({}, Default$8, $(this._element).data(), typeof config === 'object' && config ? config : {});
+      Util.typeCheckConfig(NAME$b, config, this.constructor.DefaultType);
+      return config;
+    };
+
+    _proto._close = function _close() {
+      var _this2 = this;
+
+      var complete = function complete() {
+        //this._element[0].classList.add(ClassName.HIDE)
+        $(_this2._element).remove();
+      };
+
+      this._element[0].classList.remove(ClassName$b.SHOW);
+
+      if (this._config.animation) {
+        var transitionDuration = Util.getTransitionDurationFromElement(this._element);
+        $(this._element).one(Util.TRANSITION_END, complete).emulateTransitionEnd(transitionDuration);
+      } else {
+        complete();
+      }
+    } // Static
+    ;
+
+    Loading._jQueryInterface = function _jQueryInterface(config) {
+      var $element = $(this);
+      var data = $element.data(DATA_KEY$b);
+
+      var _config = typeof config === 'object' && config;
+
+      if (!data) {
+        data = new Loading(this, _config);
+        $element.data(DATA_KEY$b, data); //console.log($element.data(DATA_KEY))
+      }
+
+      if (typeof config === 'string') {
+        if (typeof data[config] === 'undefined') {
+          throw new TypeError("No method named \"" + config + "\"");
+        }
+
+        data[config](this);
+      }
+    };
+
+    Loading._jQueryGlobalInterface = function _jQueryGlobalInterface(action, options) {
+      //参数过滤
+      if (action == null) {
+        action = 'show';
+        options = {};
+      } else if (typeof action === 'object') {
+        action = 'show';
+        options = action;
+      }
+
+      if (action == 'show') {
+        var defaults = {
+          opacity: 1,
+          //loading页面透明度
+          backgroundColor: "#000000c0",
+          //loading页面背景色
+          borderColor: "#bbb",
+          //提示边框颜色
+          borderWidth: 1,
+          //提示边框宽度
+          borderStyle: "solid",
+          //提示边框样式
+          loadingTips: "正在加载,请稍等",
+          //提示文本
+          TipsColor: "#ff922b",
+          //提示颜色
+          delayTime: 1000,
+          //页面加载完成后，加载页面渐出速度
+          zindex: 999,
+          //loading页面层次
+          sleep: 0 //设置挂起,等于0时则无需挂起
+
+        };
+        options = $.extend(defaults, options);
+
+        if (!this.__show_loading) {
+          var _PageHeight = document.documentElement.clientHeight,
+              _PageWidth = document.documentElement.clientWidth;
+
+          var _config_tpl = "<div id=\"loadingPage\" style=\"position:fixed;left:0;top:0;_position: absolute;width:100%;height:" + _PageHeight + "px;background:" + options.backgroundColor + ";opacity:" + options.opacity + ";filter:alpha(opacity=" + options.opacity + " * 100);z-index:" + options.zindex + ";\"><div class=\"loadingMsg\"><i class='fa fa-spinner anim anim-rotate anim-loop' style='margin-right:10px;'></i>" + options.loadingTips + "</div></div>";
+
+          var _tpl = typeof options === 'object' ? options.tpl || _config_tpl : _config_tpl;
+
+          var $loading = $(_tpl);
+          $('body').append($loading.addClass('fade in'));
+          $loading.loading('show');
+          this._element = $loading;
+          this.__show_loading = 1;
+        }
+      } else {
+        this._element.loading('hide');
+
+        this.__show_loading = 0;
+      }
+    };
+
+    _createClass(Loading, null, [{
+      key: "VERSION",
+      get: function get() {
+        return VERSION$b;
+      }
+    }, {
+      key: "DefaultType",
+      get: function get() {
+        return DefaultType$8;
+      }
+    }]);
+
+    return Loading;
+  }();
+  /**
+   * ------------------------------------------------------------------------
+   * jQuery
+   * ------------------------------------------------------------------------
+   */
+
+
+  $.fn[NAME$b] = Loading._jQueryInterface; //jQuery插件与该模块的桥梁
+
+  $.fn[NAME$b].Constructor = Loading;
+
+  $.fn[NAME$b].noConflict = function () {
+    $.fn[NAME$b] = JQUERY_NO_CONFLICT$b;
+    return Loading._jQueryInterface;
+  };
+
+  $[NAME$b] = Loading._jQueryGlobalInterface;
+
+  /**
+   * ------------------------------------------------------------------------
+   * Constants
+   * ------------------------------------------------------------------------
+   */
+
+  var NAME$c = 'upload';
+  var VERSION$c = '4.2.1';
+  var DATA_KEY$c = 'bs.upload';
+  var JQUERY_NO_CONFLICT$c = $.fn[NAME$c];
+  var DefaultType$9 = {
+    animation: 'boolean',
+    autohide: 'boolean',
+    delay: 'number'
+  };
+
+  var Upload =
+  /*#__PURE__*/
+  function () {
+    function Upload(element, config) {
+      var _this = this;
+
+      this._default = {
+        'maxSize': 200000000,
+        'allowMime': ['image/jpeg', 'image/gif', 'image/svg+xml', 'image/png', 'text/plain'],
+        'allowSuffix': ['doc', 'docx', 'xls', 'xlsx'],
+        'startBtn': '',
+        'uploadKey': 'bs.upload',
+        'uploadProgress': ''
+      };
+      this._element = element;
+      this._config = $.extend(this._default, config);
+      this._progress_container = null; //进度条容器 jQuery 对象
+      //console.log(this._config)
+
+      this._timeout = null;
+
+      this._element.on('change', function (e) {
+        var file_obj = element[0].files[0];
+
+        if (file_obj['size'] > _this._config['maxSize']) {
+          throw new SizeError("\u6587\u4EF6\u5C3A\u5BF8\u8D85\u8FC7\u9650\u5236,\u76EE\u524D\u4E3A" + file_obj['size']);
+          return;
+        }
+
+        var file_type = file_obj['type'];
+        var file_name = file_obj['name'];
+        var file_suffix = file_name.substr(file_name.lastIndexOf(".")).toLowerCase();
+
+        if (_this._config['allowMime'].indexOf(file_type) === false && _this._config['allowSuffix'].indexOf(file_suffix) === false) {
+          throw new TypeError("\u6587\u4EF6\u7C7B\u578B\u9519\u8BEF,\u53EA\u80FD\u4E0A\u4F20\u56FE\u7247\u548Coffice\u6587\u6863");
+          return;
+        }
+
+        _this._files = file_obj; //如果有上传按钮 则点击按钮执行上传 否则直接上传
+
+        var start_btn = $(_this._config['startBtn']);
+
+        if (start_btn.length > 0) {
+          start_btn.on('click', _this.startUpload);
+        } else {
+          _this.startUpload();
+        }
+
+        var upload_progress = null;
+
+        if (upload_progress = $(_this._config['uploadProgress'])) {
+          _this._progress_container = upload_progress;
+        }
+      });
+    } // Getters
+
+
+    var _proto = Upload.prototype;
+
+    //公共方法-开始上传文件
+    _proto.startUpload = function startUpload() {
+      var form_data = new FormData(); //创建表单数据对象
+
+      if (!form_data) {
+        throw new Error("\u76EE\u524D\u4F7F\u7528\u7684\u6D4F\u89C8\u5668\u4E0D\u652F\u6301FormData\u4E0A\u4F20\u65B9\u5F0F,\u8BF7\u66F4\u6362\u6700\u65B0\u7248\u7684Chrome\u6216Firefox\u6D4F\u89C8\u5668");
+        return;
+      }
+
+      form_data.append(this._config.uploadKey, this._files);
+      var xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener("progress", this.uploadProgress(this), false); //监听上传进度
+
+      xhr.addEventListener("load", this.uploadComplete, false);
+      xhr.addEventListener("error", this._config.uploadFailed, false);
+      xhr.open("POST", this._config.uploadUrl);
+      xhr.send(form_data);
+    } //监听上传进度方法
+    ;
+
+    _proto.uploadProgress = function uploadProgress(e) {
+      if (e.lengthComputable) {
+        var percentComplete = Math.round(e.loaded * 100 / e.total);
+
+        this._progress_container.html(percentComplete.toString() + '%');
+      }
+    } //上传完成方法
+    ;
+
+    _proto.uploadComplete = function uploadComplete(e) {
+      console.log(e);
+    } // Private
+    // Static
+    ;
+
+    Upload._jQueryInterface = function _jQueryInterface(config) {
+      var $element = $(this);
+      var data = $element.data(DATA_KEY$c);
+
+      if (!data) {
+        var _config = typeof config === 'object' && config;
+
+        data = new Upload(this, _config);
+        $element.data(DATA_KEY$c, data);
+      }
+    };
+
+    Upload._jQueryGlobalInterface = function _jQueryGlobalInterface(action, options) {
+      //参数过滤
+      if (action == null) {
+        action = 'show';
+        options = {};
+      } else if (typeof action === 'object') {
+        action = 'show';
+        options = action;
+      }
+
+      if (action == 'show') {
+        var defaults = {
+          opacity: 1,
+          //loading页面透明度
+          backgroundColor: "#000000c0",
+          //loading页面背景色
+          borderColor: "#bbb",
+          //提示边框颜色
+          borderWidth: 1,
+          //提示边框宽度
+          borderStyle: "solid",
+          //提示边框样式
+          loadingTips: "正在加载,请稍等",
+          //提示文本
+          TipsColor: "#ff922b",
+          //提示颜色
+          delayTime: 1000,
+          //页面加载完成后，加载页面渐出速度
+          zindex: 999,
+          //loading页面层次
+          sleep: 0 //设置挂起,等于0时则无需挂起
+
+        };
+        options = $.extend(defaults, options);
+
+        if (!this.__show_loading) {
+          var _PageHeight = document.documentElement.clientHeight,
+              _PageWidth = document.documentElement.clientWidth;
+
+          var _config_tpl = "<div id=\"loadingPage\" style=\"position:fixed;left:0;top:0;_position: absolute;width:100%;height:" + _PageHeight + "px;background:" + options.backgroundColor + ";opacity:" + options.opacity + ";filter:alpha(opacity=" + options.opacity + " * 100);z-index:" + options.zindex + ";\"><div class=\"loadingMsg\"><i class='fa fa-spinner anim anim-rotate anim-loop' style='margin-right:10px;'></i>" + options.loadingTips + "</div></div>";
+
+          var _tpl = typeof options === 'object' ? options.tpl || _config_tpl : _config_tpl;
+
+          var $loading = $(_tpl);
+          $('body').append($loading.addClass('fade in'));
+          $loading.loading('show');
+          this._element = $loading;
+          this.__show_loading = 1;
+        }
+      } else {
+        this._element.loading('hide');
+
+        this.__show_loading = 0;
+      }
+    };
+
+    _createClass(Upload, null, [{
+      key: "VERSION",
+      get: function get() {
+        return VERSION$c;
+      }
+    }, {
+      key: "DefaultType",
+      get: function get() {
+        return DefaultType$9;
+      }
+    }]);
+
+    return Upload;
+  }();
+  /**
+   * ------------------------------------------------------------------------
+   * jQuery
+   * ------------------------------------------------------------------------
+   */
+
+
+  $.fn[NAME$c] = Upload._jQueryInterface; //jQuery插件与该模块的桥梁
+
+  $.fn[NAME$c].Constructor = Upload;
+
+  $.fn[NAME$c].noConflict = function () {
+    $.fn[NAME$c] = JQUERY_NO_CONFLICT$c;
+    return Uploading._jQueryInterface;
   };
 
   /**
@@ -4242,8 +4759,9 @@
   exports.Tab = Tab;
   exports.Toast = Toast;
   exports.Tooltip = Tooltip;
+  exports.Upload = Upload;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 
-})));
+}));
 //# sourceMappingURL=bootstrap.js.map
