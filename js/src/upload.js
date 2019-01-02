@@ -67,7 +67,8 @@ class Upload {
     this._config  = $.extend(this._default,config)
 	this._progress_container = null			//进度条容器 jQuery 对象
 	this.file_suffix = ''					//文件后缀
-	
+	this.server_location = ''				//上传至服务器后 在服务器上的相对路径
+	this.error = 0							//服务器返回错误代码
 	
     //console.log(this._config)
     this._timeout = null
@@ -164,18 +165,44 @@ class Upload {
 		throw new Error(`文件数组还未初始化完成,无法上传`)
 		return;
 	} else {
-		let xhr = new XMLHttpRequest();
+		/*let xhr = new XMLHttpRequest();
 		xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
 		xhr.addEventListener("load", this.uploadComplete, false);
 		xhr.addEventListener("error", this._config.uploadFailed, false);
-		xhr.addEventListener("readystatechange",this.readystatechange,false);
+		xhr.addEventListener("readystatechange",this.readystatechange,false);*/
 		
 		for(let i = 0;i < _length; i++){
-			form_data.append(this._config.uploadKey,this._files_arr[i])
-			if(i == 0){
-				form_data.append('suffix',this.file_suffix)
+			if(this.error < 0){
+				return;
 			}
-			xhr.open("POST", this._config.uploadUrl);
+			let xhr = new XMLHttpRequest();
+			xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
+			xhr.addEventListener("load", this.uploadComplete, false);
+			xhr.addEventListener("error", this._config.uploadFailed, false);
+			xhr.addEventListener("readystatechange",()=>{
+				if(xhr.readyState === 4 && xhr.status === 200){
+			        let res = JSON.parse(xhr.response)
+			        this.server_location = res.url
+			        //console.log(this)
+			        this.error = res.error
+				}
+			},false);
+			
+			form_data.delete(this._config.uploadKey)
+			form_data.append(this._config.uploadKey,this._files_arr[i])
+			//文件后缀
+			if(form_data.get('suffix') == '' || form_data.get('suffix') == undefined){
+				form_data.append('suffix',this.file_suffix)	
+			}
+			//分块索引顺序
+			form_data.delete('i')
+			form_data.append('i',i)
+			if(form_data.get('server_location') == '' || form_data.get('server_location') == undefined || form_data.get('server_location') == null){
+				if(this.server_location != '' && this.server_location != undefined && this.server_location != null){
+					form_data.append('server_location',this.server_location)
+				}
+			}
+			xhr.open("POST", this._config.uploadUrl,false);		//同步才能拿到 	this.server_location 的值
 			xhr.send(form_data);
 		}
 		
@@ -195,15 +222,15 @@ class Upload {
   
   //加载完成方法
   uploadComplete(e){
-	  console.log(e)
+	  //console.log(e)
   }
   
   //响应完成方法
-  readystatechange(e){
+  /*readystatechange(e){
 	  if(this.readyState === 4 && this.status === 200){
-	        console.log(this)
-	    }
-  }
+		  let res = JSON.parse(this.response) 
+	  }
+  }*/
   
 
   // Private

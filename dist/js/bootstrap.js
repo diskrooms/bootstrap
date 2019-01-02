@@ -4510,6 +4510,10 @@
       this._progress_container = null; //进度条容器 jQuery 对象
 
       this.file_suffix = ''; //文件后缀
+
+      this.server_location = ''; //上传至服务器后 在服务器上的相对路径
+
+      this.error = 0; //服务器返回错误代码
       //console.log(this._config)
 
       this._timeout = null;
@@ -4596,6 +4600,8 @@
      * 
      */
     _proto.startUpload = function startUpload() {
+      var _this2 = this;
+
       var form_data = new FormData(); //创建表单数据对象
 
       if (!form_data) {
@@ -4609,21 +4615,57 @@
         throw new Error("\u6587\u4EF6\u6570\u7EC4\u8FD8\u672A\u521D\u59CB\u5316\u5B8C\u6210,\u65E0\u6CD5\u4E0A\u4F20");
         return;
       } else {
-        var xhr = new XMLHttpRequest();
-        xhr.upload.addEventListener("progress", this.uploadProgress(this), false); //监听上传进度
-
-        xhr.addEventListener("load", this.uploadComplete, false);
-        xhr.addEventListener("error", this._config.uploadFailed, false);
-
-        for (var i = 0; i < _length; i++) {
-          form_data.append(this._config.uploadKey, this._files_arr[i]);
-
-          if (i == 0) {
-            form_data.append('suffix', this.file_suffix);
+        var _loop = function _loop(i) {
+          if (_this2.error < 0) {
+            return {
+              v: void 0
+            };
           }
 
-          xhr.open("POST", this._config.uploadUrl);
+          var xhr = new XMLHttpRequest();
+          xhr.upload.addEventListener("progress", _this2.uploadProgress(_this2), false); //监听上传进度
+
+          xhr.addEventListener("load", _this2.uploadComplete, false);
+          xhr.addEventListener("error", _this2._config.uploadFailed, false);
+          xhr.addEventListener("readystatechange", function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+              var res = JSON.parse(xhr.response);
+              _this2.server_location = res.url; //console.log(this)
+
+              _this2.error = res.error;
+            }
+          }, false);
+          form_data.delete(_this2._config.uploadKey);
+          form_data.append(_this2._config.uploadKey, _this2._files_arr[i]); //文件后缀
+
+          if (form_data.get('suffix') == '' || form_data.get('suffix') == undefined) {
+            form_data.append('suffix', _this2.file_suffix);
+          } //分块索引顺序
+
+
+          form_data.delete('i');
+          form_data.append('i', i);
+
+          if (form_data.get('server_location') == '' || form_data.get('server_location') == undefined || form_data.get('server_location') == null) {
+            if (_this2.server_location != '' && _this2.server_location != undefined && _this2.server_location != null) {
+              form_data.append('server_location', _this2.server_location);
+            }
+          }
+
+          xhr.open("POST", _this2._config.uploadUrl, false); //同步才能拿到 	this.server_location 的值
+
           xhr.send(form_data);
+        };
+
+        /*let xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
+        xhr.addEventListener("load", this.uploadComplete, false);
+        xhr.addEventListener("error", this._config.uploadFailed, false);
+        xhr.addEventListener("readystatechange",this.readystatechange,false);*/
+        for (var i = 0; i < _length; i++) {
+          var _ret = _loop(i);
+
+          if (typeof _ret === "object") return _ret.v;
         }
         /*form_data.append(this._config.uploadKey,this._files)
         xhr.open("POST", this._config.uploadUrl);
@@ -4639,12 +4681,18 @@
 
         this._progress_container.html(percentComplete.toString() + '%');
       }
-    } //上传完成方法
+    } //加载完成方法
     ;
 
-    _proto.uploadComplete = function uploadComplete(e) {
-      console.log(e);
-    } // Private
+    _proto.uploadComplete = function uploadComplete(e) {} //console.log(e)
+    //响应完成方法
+
+    /*readystatechange(e){
+     if(this.readyState === 4 && this.status === 200){
+      let res = JSON.parse(this.response) 
+     }
+    }*/
+    // Private
     // Static
     ;
 

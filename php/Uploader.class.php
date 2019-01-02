@@ -20,6 +20,7 @@ class Uploader
     private $fileSize; //文件大小
     private $fileType; //文件类型
     private $stateInfo; //上传状态信息,
+    private $stateError;//上传错误代码
     private $stateMap = array( //上传状态映射表，国际化用户需考虑此处数据的国际化
         "SUCCESS", //上传成功标记，在UEditor中内不可改变，否则flash判断会出错
         "文件大小超出 upload_max_filesize 限制",
@@ -43,6 +44,24 @@ class Uploader
         "INVALID_URL" => "非法 URL",
         "INVALID_IP" => "非法 IP"
     );
+    private $stateCode = array(
+        "ERROR_TMP_FILE" => -1,
+        "ERROR_TMP_FILE_NOT_FOUND" => -2,
+        "ERROR_SIZE_EXCEED" => -3,
+        "ERROR_TYPE_NOT_ALLOWED" => -4,
+        "ERROR_CREATE_DIR" => -5,
+        "ERROR_DIR_NOT_WRITEABLE" => -6,
+        "ERROR_FILE_MOVE" => -7,
+        "ERROR_FILE_NOT_FOUND" => -8,
+        "ERROR_WRITE_CONTENT" => -9,
+        "ERROR_UNKNOWN" => -10,
+        "ERROR_DEAD_LINK" => -11,
+        "ERROR_HTTP_LINK" => -12,
+        "ERROR_HTTP_CONTENTTYPE" => -13,
+        "INVALID_URL" => -14,
+        "INVALID_IP" => -15
+    );
+    
 
     /**
      * 构造函数
@@ -75,16 +94,20 @@ class Uploader
         $file = $this->file = $_FILES[$this->fileField];
         if (!$file) {
             $this->stateInfo = $this->getStateInfo("ERROR_FILE_NOT_FOUND");
+            $this->stateError = $this->getStateCode("ERROR_FILE_NOT_FOUND");
             return;
         }
         if ($this->file['error']) {
             $this->stateInfo = $this->getStateInfo($file['error']);
+            $this->stateError = $this->getStateCode($file['error']);
             return;
         } else if (!file_exists($file['tmp_name'])) {
             $this->stateInfo = $this->getStateInfo("ERROR_TMP_FILE_NOT_FOUND");
+            $this->stateError = $this->getStateCode("ERROR_TMP_FILE_NOT_FOUND");
             return;
         } else if (!is_uploaded_file($file['tmp_name'])) {
             $this->stateInfo = $this->getStateInfo("ERROR_TMPFILE");
+            $this->stateError = $this->getStateCode("ERROR_TMPFILE");
             return;
         }
 
@@ -99,29 +122,41 @@ class Uploader
         //检查文件大小是否超出限制
         if (!$this->checkSize()) {
             $this->stateInfo = $this->getStateInfo("ERROR_SIZE_EXCEED");
+            $this->stateError = $this->getStateCode("ERROR_SIZE_EXCEED");
             return;
         }
 
         //检查是否不允许的文件格式
         if (!$this->checkType()) {
             $this->stateInfo = $this->getStateInfo("ERROR_TYPE_NOT_ALLOWED");
+            $this->stateError = $this->getStateCode("ERROR_TYPE_NOT_ALLOWED");
             return;
         }
 
         //创建目录失败
         if (!file_exists($dirname) && !mkdir($dirname, 0777, true)) {
             $this->stateInfo = $this->getStateInfo("ERROR_CREATE_DIR");
+            $this->stateError = $this->getStateCode("ERROR_CREATE_DIR");
             return;
         } else if (!is_writeable($dirname)) {
             $this->stateInfo = $this->getStateInfo("ERROR_DIR_NOT_WRITEABLE");
+            $this->stateError = $this->getStateCode("ERROR_DIR_NOT_WRITEABLE");
             return;
         }
-
-        //移动文件
-        if (!(move_uploaded_file($file["tmp_name"], $this->filePath) && file_exists($this->filePath))) { //移动失败
-            $this->stateInfo = $this->getStateInfo("ERROR_FILE_MOVE");
-        } else { //移动成功
-            $this->stateInfo = $this->stateMap[0];
+    
+        //首次移动文件 之后追加文件
+        if(intval($_POST['i']) == 0){
+            if (!(move_uploaded_file($file["tmp_name"], $this->filePath) && file_exists($this->filePath))) { 
+                //移动失败
+                $this->stateInfo = $this->getStateInfo("ERROR_FILE_MOVE");
+                $this->stateError = $this->getStateCode("ERROR_FILE_MOVE");
+            } else { 
+                //移动成功
+                $this->stateInfo = $this->stateMap[0];
+            }
+        } else {
+            $state = file_put_contents($this->filePath, file_get_contents($file["tmp_name"]), FILE_APPEND);
+            $this->stateInfo = ($state === false) ? 'FAILED' : $state;
         }
     }
 
@@ -145,21 +180,25 @@ class Uploader
         //检查文件大小是否超出限制
         if (!$this->checkSize()) {
             $this->stateInfo = $this->getStateInfo("ERROR_SIZE_EXCEED");
+            $this->stateError = $this->getStateCode("ERROR_SIZE_EXCEED");
             return;
         }
 
         //创建目录失败
         if (!file_exists($dirname) && !mkdir($dirname, 0777, true)) {
             $this->stateInfo = $this->getStateInfo("ERROR_CREATE_DIR");
+            $this->stateError = $this->getStateCode("ERROR_CREATE_DIR");
             return;
         } else if (!is_writeable($dirname)) {
             $this->stateInfo = $this->getStateInfo("ERROR_DIR_NOT_WRITEABLE");
+            $this->stateError = $this->getStateCode("ERROR_DIR_NOT_WRITEABLE");
             return;
         }
 
         //移动文件
         if (!(file_put_contents($this->filePath, $img) && file_exists($this->filePath))) { //移动失败
             $this->stateInfo = $this->getStateInfo("ERROR_WRITE_CONTENT");
+            $this->stateError = $this->getStateCode("ERROR_WRITE_CONTENT");
         } else { //移动成功
             $this->stateInfo = $this->stateMap[0];
         }
@@ -178,6 +217,7 @@ class Uploader
         //http开头验证
         if (strpos($imgUrl, "http") !== 0) {
             $this->stateInfo = $this->getStateInfo("ERROR_HTTP_LINK");
+            $this->stateError = $this->getStateCode("ERROR_HTTP_LINK");
             return;
         }
 
@@ -187,6 +227,7 @@ class Uploader
         // 判断是否是合法 url
         if (!filter_var($host_with_protocol, FILTER_VALIDATE_URL)) {
             $this->stateInfo = $this->getStateInfo("INVALID_URL");
+            $this->stateError = $this->getStateCode("INVALID_URL");
             return;
         }
 
@@ -198,6 +239,7 @@ class Uploader
         // 判断是否是私有 ip
         if(!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE)) {
             $this->stateInfo = $this->getStateInfo("INVALID_IP");
+            $this->stateError = $this->getStateCode("INVALID_IP");
             return;
         }
 
@@ -205,12 +247,14 @@ class Uploader
         $heads = get_headers($imgUrl, 1);
         if (!(stristr($heads[0], "200") && stristr($heads[0], "OK"))) {
             $this->stateInfo = $this->getStateInfo("ERROR_DEAD_LINK");
+            $this->stateError = $this->getStateCode("ERROR_DEAD_LINK");
             return;
         }
         //格式验证(扩展名验证和Content-Type验证)
         $fileType = strtolower(strrchr($imgUrl, '.'));
         if (!in_array($fileType, $this->config['allowFiles']) || !isset($heads['Content-Type']) || !stristr($heads['Content-Type'], "image")) {
             $this->stateInfo = $this->getStateInfo("ERROR_HTTP_CONTENTTYPE");
+            $this->stateError = $this->getStateCode("ERROR_HTTP_CONTENTTYPE");
             return;
         }
 
@@ -237,21 +281,25 @@ class Uploader
         //检查文件大小是否超出限制
         if (!$this->checkSize()) {
             $this->stateInfo = $this->getStateInfo("ERROR_SIZE_EXCEED");
+            $this->stateError = $this->getStateCode("ERROR_SIZE_EXCEED");
             return;
         }
 
         //创建目录失败
         if (!file_exists($dirname) && !mkdir($dirname, 0777, true)) {
             $this->stateInfo = $this->getStateInfo("ERROR_CREATE_DIR");
+            $this->stateError = $this->getStateCode("ERROR_CREATE_DIR");
             return;
         } else if (!is_writeable($dirname)) {
             $this->stateInfo = $this->getStateInfo("ERROR_DIR_NOT_WRITEABLE");
+            $this->stateError = $this->getStateCode("ERROR_DIR_NOT_WRITEABLE");
             return;
         }
 
         //移动文件
         if (!(file_put_contents($this->filePath, $img) && file_exists($this->filePath))) { //移动失败
             $this->stateInfo = $this->getStateInfo("ERROR_WRITE_CONTENT");
+            $this->stateError = $this->getStateCode("ERROR_WRITE_CONTENT");
         } else { //移动成功
             $this->stateInfo = $this->stateMap[0];
         }
@@ -266,6 +314,16 @@ class Uploader
     private function getStateInfo($errCode)
     {
         return !$this->stateMap[$errCode] ? $this->stateMap["ERROR_UNKNOWN"] : $this->stateMap[$errCode];
+    }
+    
+    /**
+     * 获取错误整数代码
+     * @param string $errCode
+     * @return int
+     */
+    private function getStateCode($errCode)
+    {
+        return !$this->stateCode[$errCode] ? $this->stateCode["ERROR_UNKNOWN"] : $this->stateCode[$errCode];
     }
 
     /**
@@ -287,32 +345,37 @@ class Uploader
      */
     private function getFullName()
     {
-        //替换日期事件
-        $t = time();
-        $d = explode('-', date("Y-y-m-d-H-i-s"));
-        $format = $this->config["pathFormat"];
-        $format = str_replace("{yyyy}", $d[0], $format);
-        $format = str_replace("{yy}", $d[1], $format);
-        $format = str_replace("{mm}", $d[2], $format);
-        $format = str_replace("{dd}", $d[3], $format);
-        $format = str_replace("{hh}", $d[4], $format);
-        $format = str_replace("{ii}", $d[5], $format);
-        $format = str_replace("{ss}", $d[6], $format);
-        $format = str_replace("{time}", $t, $format);
-
-        //过滤文件名的非法自负,并替换文件名
-        $oriName = substr($this->oriName, 0, strrpos($this->oriName, '.'));
-        $oriName = preg_replace("/[\|\?\"\<\>\/\*\\\\]+/", '', $oriName);
-        $format = str_replace("{filename}", $oriName, $format);
-
-        //替换随机字符串
-        $randNum = rand(1, 10000000000) . rand(1, 10000000000);
-        if (preg_match("/\{rand\:([\d]*)\}/i", $format, $matches)) {
-            $format = preg_replace("/\{rand\:[\d]*\}/i", substr($randNum, 0, $matches[1]), $format);
+        if(intval($_POST['i']) == 0){
+            //替换日期事件
+            $t = time();
+            $d = explode('-', date("Y-y-m-d-H-i-s"));
+            $format = $this->config["pathFormat"];
+            $format = str_replace("{yyyy}", $d[0], $format);
+            $format = str_replace("{yy}", $d[1], $format);
+            $format = str_replace("{mm}", $d[2], $format);
+            $format = str_replace("{dd}", $d[3], $format);
+            $format = str_replace("{hh}", $d[4], $format);
+            $format = str_replace("{ii}", $d[5], $format);
+            $format = str_replace("{ss}", $d[6], $format);
+            $format = str_replace("{time}", $t, $format);
+    
+            //过滤文件名的非法自负,并替换文件名
+            $oriName = substr($this->oriName, 0, strrpos($this->oriName, '.'));
+            $oriName = preg_replace("/[\|\?\"\<\>\/\*\\\\]+/", '', $oriName);
+            $format = str_replace("{filename}", $oriName, $format);
+    
+            //替换随机字符串
+            $randNum = rand(1, 10000000000) . rand(1, 10000000000);
+            if (preg_match("/\{rand\:([\d]*)\}/i", $format, $matches)) {
+                $format = preg_replace("/\{rand\:[\d]*\}/i", substr($randNum, 0, $matches[1]), $format);
+            }
+    
+            $ext = $this->getFileExt();
+            return $format . $ext;
+        } else {
+            $server_location = trim(addslashes($_POST['server_location']));
+            return $server_location;
         }
-
-        $ext = $this->getFileExt();
-        return $format . $ext;
     }
 
     /**
@@ -365,6 +428,7 @@ class Uploader
     {
         return array(
             "state" => $this->stateInfo,
+            'error' => $this->stateError,
             "url" => $this->fullName,
             "title" => $this->fileName,
             "original" => $this->oriName,
