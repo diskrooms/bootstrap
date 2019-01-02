@@ -88,13 +88,17 @@ class Upload {
 				let _slice_arr = []
 				let start = 0
 				let end = block_size
-				while(end < total_size){
+
+				while((end <= total_size) && (start < total_size)){
 					let _slice = file_obj.slice(start,end)
 					_slice_arr.push(_slice)
 					start += block_size
-					end += block_size
+					end = ((end + block_size) >  total_size) ? total_size : (end + block_size)
 				}
-				console.log(_slice_arr)
+				//console.log(_slice_arr)
+				this._files_arr = _slice_arr
+			} else {
+				this._files_arr = file_obj
 			}
 		}
 		
@@ -130,15 +134,23 @@ class Upload {
 	if(!form_data){
 		throw new Error(`目前使用的浏览器不支持FormData上传方式,请更换最新版的Chrome或Firefox浏览器`)
 		return;
+	} 
+	let _length = this._files_arr.length
+	if(_length == 0){
+		throw new Error(`文件数组还未初始化完成,无法上传`)
+		return;
+	} else {
+		let xhr = new XMLHttpRequest();
+		xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
+		xhr.addEventListener("load", this.uploadComplete, false);
+		xhr.addEventListener("error", this._config.uploadFailed, false);
+		
+		for(let i = 0;i < _length; i++){
+			form_data.append(this._config.uploadKey,this._files_arr[i])
+			xhr.open("POST", this._config.uploadUrl, false);
+			xhr.send(form_data);
+		}
 	}
-	form_data.append(this._config.uploadKey,this._files)
-	var xhr = new XMLHttpRequest();
-	xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
-	xhr.addEventListener("load", this.uploadComplete, false);
-	xhr.addEventListener("error", this._config.uploadFailed, false);
-	
-	xhr.open("POST", this._config.uploadUrl, false);
-	xhr.send(form_data);
   }
   
   //监听上传进度方法

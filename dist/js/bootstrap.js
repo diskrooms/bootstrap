@@ -4284,11 +4284,7 @@
   var NAME$b = 'loading';
   var VERSION$b = '4.2.1';
   var DATA_KEY$b = 'bs.loading';
-  var EVENT_KEY$b = "." + DATA_KEY$b;
   var JQUERY_NO_CONFLICT$b = $.fn[NAME$b];
-  var Event$b = {
-    CLICK_DISMISS: "click.dismiss" + EVENT_KEY$b
-  };
   var ClassName$b = {
     FADE: 'fade',
     HIDE: 'hide',
@@ -4323,13 +4319,9 @@
     } // Getters
 
 
-    Loading.test = function test() {
-      console.log('abc');
-    } // Public
-    ;
-
     var _proto = Loading.prototype;
 
+    // Public
     _proto.show = function show() {
       var _this = this;
 
@@ -4364,21 +4356,6 @@
       }
 
       this._close();
-    } //初始化
-    ;
-
-    _proto.dispose = function dispose() {
-      clearTimeout(this._timeout);
-      this._timeout = null;
-
-      if (this._element.classList.contains(ClassName$b.SHOW)) {
-        this._element.classList.remove(ClassName$b.SHOW);
-      }
-
-      $(this._element).off(Event$b.CLICK_DISMISS);
-      $.removeData(this._element, DATA_KEY$b);
-      this._element = null;
-      this._config = null;
     } // Private
     ;
 
@@ -4392,11 +4369,10 @@
       var _this2 = this;
 
       var complete = function complete() {
-        //this._element[0].classList.add(ClassName.HIDE)
-        $(_this2._element).remove();
+        _this2._element.classList.add(ClassName$b.HIDE);
       };
 
-      this._element[0].classList.remove(ClassName$b.SHOW);
+      this._element.classList.remove(ClassName$b.SHOW);
 
       if (this._config.animation) {
         var transitionDuration = Util.getTransitionDurationFromElement(this._element);
@@ -4430,14 +4406,14 @@
     Loading._jQueryGlobalInterface = function _jQueryGlobalInterface(action, options) {
       //参数过滤
       if (action == null) {
-        action = 'show';
+        action = 'start';
         options = {};
       } else if (typeof action === 'object') {
-        action = 'show';
+        action = 'start';
         options = action;
       }
 
-      if (action == 'show') {
+      if (action = 'start') {
         var defaults = {
           opacity: 1,
           //loading页面透明度
@@ -4449,7 +4425,7 @@
           //提示边框宽度
           borderStyle: "solid",
           //提示边框样式
-          loadingTips: "正在加载,请稍等",
+          loadingTips: "Loading, please wait...",
           //提示文本
           TipsColor: "#ff922b",
           //提示颜色
@@ -4461,25 +4437,23 @@
 
         };
         options = $.extend(defaults, options);
+      }
 
-        if (!this.__show_loading) {
-          var _PageHeight = document.documentElement.clientHeight,
-              _PageWidth = document.documentElement.clientWidth;
+      if (!this.__init_loading) {
+        var _PageHeight = document.documentElement.clientHeight,
+            _PageWidth = document.documentElement.clientWidth;
 
-          var _config_tpl = "<div id=\"loadingPage\" style=\"position:fixed;left:0;top:0;_position: absolute;width:100%;height:" + _PageHeight + "px;background:" + options.backgroundColor + ";opacity:" + options.opacity + ";filter:alpha(opacity=" + options.opacity + " * 100);z-index:" + options.zindex + ";\"><div class=\"loadingMsg\"><i class='fa fa-spinner anim anim-rotate anim-loop' style='margin-right:10px;'></i>" + options.loadingTips + "</div></div>";
+        var _config_tpl = "<div id=\"loadingPage\" style=\"position:fixed;left:0;top:0;_position: absolute;width:100%;height:" + _PageHeight + "px;background:" + options.backgroundColor + ";opacity:" + options.opacity + ";filter:alpha(opacity=" + options.opacity + " * 100);z-index:" + options.zindex + ";\"><div id=\"loadingTips\" style=\"position: absolute; cursor1: wait; width: auto; height:40px; line-height:40px;border-radius:10px; color:" + options.TipsColor + ";font-size:20px;\">" + options.loadingTips + "</div></div>";
 
-          var _tpl = typeof options === 'object' ? options.tpl || _config_tpl : _config_tpl;
+        var _tpl = typeof options === 'object' ? options.tpl || _config_tpl : _config_tpl;
 
-          var $loading = $(_tpl);
-          $('body').append($loading.addClass('fade in'));
-          $loading.loading('show');
-          this._element = $loading;
-          this.__show_loading = 1;
-        }
+        var $loading = $(_tpl);
+        $('body').append($loading.addClass('fade in'));
+        $loading.loading('show');
+        this.__init_loading = 1;
+        this._element = $loading;
       } else {
-        this._element.loading('hide');
-
-        this.__show_loading = 0;
+        this._element.toast('show');
       }
     };
 
@@ -4497,23 +4471,6 @@
 
     return Loading;
   }();
-  /**
-   * ------------------------------------------------------------------------
-   * jQuery
-   * ------------------------------------------------------------------------
-   */
-
-
-  $.fn[NAME$b] = Loading._jQueryInterface; //jQuery插件与该模块的桥梁
-
-  $.fn[NAME$b].Constructor = Loading;
-
-  $.fn[NAME$b].noConflict = function () {
-    $.fn[NAME$b] = JQUERY_NO_CONFLICT$b;
-    return Loading._jQueryInterface;
-  };
-
-  $[NAME$b] = Loading._jQueryGlobalInterface;
 
   /**
    * ------------------------------------------------------------------------
@@ -4538,12 +4495,15 @@
       var _this = this;
 
       this._default = {
-        'maxSize': 200000000,
+        'maxSize': 200 * 1024 * 1000,
+        //最大尺寸 200MB
         'allowMime': ['image/jpeg', 'image/gif', 'image/svg+xml', 'image/png', 'text/plain'],
         'allowSuffix': ['doc', 'docx', 'xls', 'xlsx'],
         'startBtn': '',
         'uploadKey': 'bs.upload',
-        'uploadProgress': ''
+        'uploadProgress': '',
+        'blockSize': 2048000 //分片大小 2MB
+
       };
       this._element = element;
       this._config = $.extend(this._default, config);
@@ -4554,12 +4514,6 @@
 
       this._element.on('change', function (e) {
         var file_obj = element[0].files[0];
-
-        if (file_obj['size'] > _this._config['maxSize']) {
-          throw new SizeError("\u6587\u4EF6\u5C3A\u5BF8\u8D85\u8FC7\u9650\u5236,\u76EE\u524D\u4E3A" + file_obj['size']);
-          return;
-        }
-
         var file_type = file_obj['type'];
         var file_name = file_obj['name'];
         var file_suffix = file_name.substr(file_name.lastIndexOf(".")).toLowerCase();
@@ -4567,9 +4521,32 @@
         if (_this._config['allowMime'].indexOf(file_type) === false && _this._config['allowSuffix'].indexOf(file_suffix) === false) {
           throw new TypeError("\u6587\u4EF6\u7C7B\u578B\u9519\u8BEF,\u53EA\u80FD\u4E0A\u4F20\u56FE\u7247\u548Coffice\u6587\u6863");
           return;
-        }
+        } else if (file_obj['size'] > _this._config['maxSize']) {
+          throw new SizeError("\u6587\u4EF6\u5C3A\u5BF8\u8D85\u8FC7\u9650\u5236,\u76EE\u524D\u4E3A" + file_obj['size']);
+          return;
+        } else {
+          _this._files = file_obj;
+          var total_size = file_obj['size'];
+          var block_size = _this._config['blockSize'];
 
-        _this._files = file_obj; //如果有上传按钮 则点击按钮执行上传 否则直接上传
+          if (total_size > block_size) {
+            var _slice_arr = [];
+            var start = 0;
+            var end = block_size;
+
+            while (end <= total_size && start < total_size) {
+              var _slice = file_obj.slice(start, end);
+
+              _slice_arr.push(_slice);
+
+              start += block_size;
+              end = end + block_size > total_size ? total_size : end + block_size;
+            }
+
+            console.log(_slice_arr);
+          }
+        } //如果有上传按钮 则点击按钮执行上传 否则直接上传
+
 
         var start_btn = $(_this._config['startBtn']);
 
@@ -4605,7 +4582,7 @@
 
       xhr.addEventListener("load", this.uploadComplete, false);
       xhr.addEventListener("error", this._config.uploadFailed, false);
-      xhr.open("POST", this._config.uploadUrl);
+      xhr.open("POST", this._config.uploadUrl, false);
       xhr.send(form_data);
     } //监听上传进度方法
     ;
