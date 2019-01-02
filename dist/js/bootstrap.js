@@ -4508,6 +4508,8 @@
       this._element = element;
       this._config = $.extend(this._default, config);
       this._progress_container = null; //进度条容器 jQuery 对象
+
+      this.file_suffix = ''; //文件后缀
       //console.log(this._config)
 
       this._timeout = null;
@@ -4517,6 +4519,7 @@
         var file_type = file_obj['type'];
         var file_name = file_obj['name'];
         var file_suffix = file_name.substr(file_name.lastIndexOf(".")).toLowerCase();
+        _this.file_suffix = file_suffix;
 
         if (_this._config['allowMime'].indexOf(file_type) === false && _this._config['allowSuffix'].indexOf(file_suffix) === false) {
           throw new TypeError("\u6587\u4EF6\u7C7B\u578B\u9519\u8BEF,\u53EA\u80FD\u4E0A\u4F20\u56FE\u7247\u548Coffice\u6587\u6863");
@@ -4541,9 +4544,12 @@
 
               start += block_size;
               end = end + block_size > total_size ? total_size : end + block_size;
-            }
+            } //console.log(_slice_arr)
 
-            console.log(_slice_arr);
+
+            _this._files_arr = _slice_arr;
+          } else {
+            _this._files_arr = file_obj;
           }
         } //如果有上传按钮 则点击按钮执行上传 否则直接上传
 
@@ -4567,7 +4573,28 @@
 
     var _proto = Upload.prototype;
 
-    //公共方法-开始上传文件
+    /**
+     * 公共方法-开始上传文件
+     * 
+     * 整体上传后端返回信息
+     * original: "red-robin-3743702.png"
+     * size: 2760801
+     * state: "文件大小超出网站限制"
+     * title: "1546398947942439.png"
+     * type: ".png"
+     * url: "/upload/ueditor/image/20190102/1546398947942439.png"
+     * 
+     * 分片上传后端返回信息
+     * original: "blob"
+     * size: 712801
+     * state: "文件类型不允许"
+     * title: "1546399252663550"
+     * type: ""
+     * url: "/upload/ueditor/image/20190102/1546399252663550"
+     * 
+     * 
+     * 
+     */
     _proto.startUpload = function startUpload() {
       var form_data = new FormData(); //创建表单数据对象
 
@@ -4576,14 +4603,33 @@
         return;
       }
 
-      form_data.append(this._config.uploadKey, this._files);
-      var xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener("progress", this.uploadProgress(this), false); //监听上传进度
+      var _length = this._files_arr.length;
 
-      xhr.addEventListener("load", this.uploadComplete, false);
-      xhr.addEventListener("error", this._config.uploadFailed, false);
-      xhr.open("POST", this._config.uploadUrl, false);
-      xhr.send(form_data);
+      if (_length == 0) {
+        throw new Error("\u6587\u4EF6\u6570\u7EC4\u8FD8\u672A\u521D\u59CB\u5316\u5B8C\u6210,\u65E0\u6CD5\u4E0A\u4F20");
+        return;
+      } else {
+        var xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener("progress", this.uploadProgress(this), false); //监听上传进度
+
+        xhr.addEventListener("load", this.uploadComplete, false);
+        xhr.addEventListener("error", this._config.uploadFailed, false);
+
+        for (var i = 0; i < _length; i++) {
+          form_data.append(this._config.uploadKey, this._files_arr[i]);
+
+          if (i == 0) {
+            form_data.append('suffix', this.file_suffix);
+          }
+
+          xhr.open("POST", this._config.uploadUrl);
+          xhr.send(form_data);
+        }
+        /*form_data.append(this._config.uploadKey,this._files)
+        xhr.open("POST", this._config.uploadUrl);
+        xhr.send(form_data);*/
+
+      }
     } //监听上传进度方法
     ;
 

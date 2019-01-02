@@ -270,10 +270,14 @@ class Uploader
 
     /**
      * 获取文件扩展名
+     * 如果是blob二进制 则根据POST过来的suffix键名获取扩展名
      * @return string
      */
     private function getFileExt()
     {
+        if($this->oriName == 'blob'){
+            return trim($_POST['suffix']);
+        }
         return strtolower(strrchr($this->oriName, '.'));
     }
 
