@@ -82,8 +82,19 @@ class Upload {
 			return;
 		} else {
 			this._files = file_obj
-			if(file_obj['size'] > this._config['blockSize']){
-				
+			let total_size = file_obj['size']
+			let block_size = this._config['blockSize']
+			if(total_size > block_size){
+				let _slice_arr = []
+				let start = 0
+				let end = block_size
+				while(end < total_size){
+					let _slice = file_obj.slice(start,end)
+					_slice_arr.push(_slice)
+					start += block_size
+					end += block_size
+				}
+				console.log(_slice_arr)
 			}
 		}
 		
