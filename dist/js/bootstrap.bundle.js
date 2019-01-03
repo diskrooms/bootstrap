@@ -7078,6 +7078,10 @@
       this._config = $.extend(this._default, config);
       this._progress_container = null; //进度条容器 jQuery 对象
 
+      this._progress_status = 0; //进度条初始化状态 0 未初始化 1 已初始化
+
+      this._progress_obj = null; //进度条 jQuery 对象
+
       this.file_suffix = ''; //文件后缀
 
       this.server_location = ''; //上传至服务器后 在服务器上的相对路径
@@ -7184,8 +7188,18 @@
         throw new Error("\u6587\u4EF6\u6570\u7EC4\u8FD8\u672A\u521D\u59CB\u5316\u5B8C\u6210,\u65E0\u6CD5\u4E0A\u4F20");
         return;
       } else {
+        /*let xhr = new XMLHttpRequest();
+        xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
+        xhr.addEventListener("load", this.uploadComplete, false);
+        xhr.addEventListener("error", this._config.uploadFailed, false);
+        xhr.addEventListener("readystatechange",this.readystatechange,false);*/
+        this._showProgress();
+
         var _loop = function _loop(i) {
           if (_this2.error < 0) {
+            _this2._removeProgress(); //todo 提示错误
+
+
             return {
               v: void 0
             };
@@ -7202,6 +7216,8 @@
               _this2.server_location = res.url; //console.log(this)
 
               _this2.error = res.error;
+
+              _this2._updateProgress(res.progress);
             }
           }, false);
           form_data.delete(_this2._config.uploadKey);
@@ -7213,24 +7229,22 @@
 
 
           form_data.delete('i');
-          form_data.append('i', i);
+          form_data.append('i', i); //保存于服务端的文件路径
 
           if (form_data.get('server_location') == '' || form_data.get('server_location') == undefined || form_data.get('server_location') == null) {
             if (_this2.server_location != '' && _this2.server_location != undefined && _this2.server_location != null) {
               form_data.append('server_location', _this2.server_location);
             }
-          }
+          } //总分块数量
 
+
+          form_data.delete('totalBlocks');
+          form_data.append('totalBlocks', _length);
           xhr.open("POST", _this2._config.uploadUrl, false); //同步才能拿到 	this.server_location 的值
 
           xhr.send(form_data);
         };
 
-        /*let xhr = new XMLHttpRequest();
-        xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
-        xhr.addEventListener("load", this.uploadComplete, false);
-        xhr.addEventListener("error", this._config.uploadFailed, false);
-        xhr.addEventListener("readystatechange",this.readystatechange,false);*/
         for (var i = 0; i < _length; i++) {
           var _ret = _loop(i);
 
@@ -7262,7 +7276,41 @@
      }
     }*/
     // Private
-    // Static
+    //初始化进度条
+    ;
+
+    _proto._showProgress = function _showProgress() {
+      var progress_html = "<div class=\"col-md-6\" style=\"margin:0 auto;top:200px\">\n\t  \t\t\t\t\t\t\t<div class=\"box box-solid\">\n\t  \t\t\t\t\t\t\t\t<div class=\"box-header with-border\">\n\t  \t\t\t\t\t\t\t\t\t<h3 class=\"box-title\">\u6B63\u5728\u4E0A\u4F20...</h3>\n\t  \t\t\t\t\t\t\t\t\t<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">\xD7</button>\n\t  \t\t\t\t\t\t\t\t</div>\n\t\t  \t\t\t\t\t\t\t<div class=\"box-body\">\n\t\t  \t\t\t\t\t\t\t\t<div class=\"progress progress-xs active\">\n\t\t  \t\t\t\t\t\t\t\t\t<div class=\"progress-bar progress-bar-success progress-bar-striped\" role=\"progressbar\" aria-valuenow=\"20\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: 0%\"><span class=\"sr-only\"></span></div>\n\t\t  \t\t\t\t\t\t\t\t</div>\n\t\t  \t\t\t\t\t\t\t</div>\n\t\t  \t\t\t\t\t\t</div>\n\t\t  \t\t\t\t\t</div>";
+      this._progress_obj = $(progress_html);
+      $('body').append(this._progress_obj);
+      this._progress_status = 1;
+    } //更新进度条
+    ;
+
+    _proto._updateProgress = function _updateProgress($width) {
+      if ($width === void 0) {
+        $width = 0;
+      }
+
+      if (this._progress_status == 0) {
+        throw new Error('进度条没有初始化，无法更新');
+        return;
+      }
+
+      this._progress_obj.find('.progress .progress-bar').css('width', $width + "%");
+    } //移除进度条
+    ;
+
+    _proto._removeProgress = function _removeProgress() {
+      if (this._progress_status == 0) {
+        return;
+      }
+
+      this._progress_obj.remove();
+
+      this._progress_obj = null;
+      this._progress_status == 0;
+    } // Static
     ;
 
     Upload._jQueryInterface = function _jQueryInterface(config) {

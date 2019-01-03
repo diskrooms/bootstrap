@@ -66,6 +66,9 @@ class Upload {
     this._element = element
     this._config  = $.extend(this._default,config)
 	this._progress_container = null			//进度条容器 jQuery 对象
+	this._progress_status = 0				//进度条初始化状态 0 未初始化 1 已初始化
+	this._progress_obj = null				//进度条 jQuery 对象
+	
 	this.file_suffix = ''					//文件后缀
 	this.server_location = ''				//上传至服务器后 在服务器上的相对路径
 	this.error = 0							//服务器返回错误代码
@@ -171,8 +174,12 @@ class Upload {
 		xhr.addEventListener("error", this._config.uploadFailed, false);
 		xhr.addEventListener("readystatechange",this.readystatechange,false);*/
 		
+		this._showProgress()
+
 		for(let i = 0;i < _length; i++){
 			if(this.error < 0){
+				this._removeProgress()
+				//todo 提示错误
 				return;
 			}
 			let xhr = new XMLHttpRequest();
@@ -185,6 +192,7 @@ class Upload {
 			        this.server_location = res.url
 			        //console.log(this)
 			        this.error = res.error
+			        this._updateProgress(res.progress)
 				}
 			},false);
 			
@@ -197,11 +205,15 @@ class Upload {
 			//分块索引顺序
 			form_data.delete('i')
 			form_data.append('i',i)
+			//保存于服务端的文件路径
 			if(form_data.get('server_location') == '' || form_data.get('server_location') == undefined || form_data.get('server_location') == null){
 				if(this.server_location != '' && this.server_location != undefined && this.server_location != null){
 					form_data.append('server_location',this.server_location)
 				}
 			}
+			//总分块数量
+			form_data.delete('totalBlocks')
+			form_data.append('totalBlocks',_length)
 			xhr.open("POST", this._config.uploadUrl,false);		//同步才能拿到 	this.server_location 的值
 			xhr.send(form_data);
 		}
@@ -234,6 +246,44 @@ class Upload {
   
 
   // Private
+  //初始化进度条
+  _showProgress(){
+	  let progress_html = `<div class="col-md-6" style="margin:0 auto;top:200px">
+	  							<div class="box box-solid">
+	  								<div class="box-header with-border">
+	  									<h3 class="box-title">正在上传...</h3>
+	  									<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+	  								</div>
+		  							<div class="box-body">
+		  								<div class="progress progress-xs active">
+		  									<div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" style="width: 0%"><span class="sr-only"></span></div>
+		  								</div>
+		  							</div>
+		  						</div>
+		  					</div>`
+	  this._progress_obj = $(progress_html)
+  	  $('body').append(this._progress_obj)
+  	  this._progress_status = 1
+  }
+  
+  //更新进度条
+  _updateProgress($width = 0){
+	  if(this._progress_status == 0){
+		  throw new Error('进度条没有初始化，无法更新')
+		  return
+	  }
+	  this._progress_obj.find('.progress .progress-bar').css('width',`${$width}%`)
+  }
+  
+  //移除进度条
+  _removeProgress(){
+	  if(this._progress_status == 0){
+		  return
+	  }
+	  this._progress_obj.remove()
+	  this._progress_obj = null
+	  this._progress_status == 0
+  }
 
   // Static
   static _jQueryInterface(config) {
@@ -246,46 +296,6 @@ class Upload {
       }
   }
   
-  static _jQueryGlobalInterface(action,options){
-	  //参数过滤
-	  if(action == null){
-		  action = 'show'
-		  options = {}
-	  } else if(typeof action === 'object'){
-		  action = 'show'
-		  options = action
-	  }
-	  if(action == 'show'){
-		  let defaults = {
-	            opacity: 1,									//loading页面透明度
-	            backgroundColor: "#000000c0",				//loading页面背景色
-	            borderColor: "#bbb",						//提示边框颜色
-	            borderWidth: 1,								//提示边框宽度
-	            borderStyle: "solid",						//提示边框样式
-	            loadingTips: "正在加载,请稍等",		//提示文本
-	            TipsColor: "#ff922b",						//提示颜色
-	            delayTime: 1000,							//页面加载完成后，加载页面渐出速度
-	            zindex: 999,								//loading页面层次
-	            sleep: 0									//设置挂起,等于0时则无需挂起
-	      }
-	      options = $.extend(defaults, options);
-		  if(!this.__show_loading){
-			  let _PageHeight = document.documentElement.clientHeight,_PageWidth = document.documentElement.clientWidth;
-			  let _config_tpl = `<div id="loadingPage" style="position:fixed;left:0;top:0;_position: absolute;width:100%;height:${_PageHeight}px;background:${options.backgroundColor};opacity:${options.opacity};filter:alpha(opacity=${options.opacity} * 100);z-index:${options.zindex};"><div class="loadingMsg"><i class='fa fa-spinner anim anim-rotate anim-loop' style='margin-right:10px;'></i>${options.loadingTips}</div></div>`
-			  let _tpl = (typeof options === 'object')  ? (options.tpl || _config_tpl) : _config_tpl;
-			  let $loading  = $(_tpl);
-			  $('body').append($loading.addClass('fade in'))
-			  $loading.loading('show')
-			  this._element  = $loading
-			  this.__show_loading = 1;
-		  }
-	  } else {
-		  this._element.loading('hide')
-		  this.__show_loading = 0
-	  }
-
-	  
-  }
 }
 
 /**

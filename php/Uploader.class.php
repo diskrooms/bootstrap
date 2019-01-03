@@ -419,6 +419,15 @@ class Uploader
     {
         return $this->fileSize <= ($this->config["maxSize"]);
     }
+    
+    /**
+     * 获取上传进度
+     */
+    private function progress(){
+        $index = intval($_POST['i']) + 1;
+        $total = intval($_POST['totalBlocks']);
+        return intval(($index / $total)*100);
+    }
 
     /**
      * 获取当前上传成功文件的各项信息
@@ -433,7 +442,8 @@ class Uploader
             "title" => $this->fileName,
             "original" => $this->oriName,
             "type" => $this->fileType,
-            "size" => $this->fileSize
+            "size" => $this->fileSize,
+            "progress" => $this->progress()
         );
     }
 
