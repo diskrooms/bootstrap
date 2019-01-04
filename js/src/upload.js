@@ -62,6 +62,7 @@ class Upload {
 		'uploadKey':'bs.upload',
 		'uploadProgress':'',
 		'blockSize':2048000					//分片大小 2MB
+		'filePathConfig':'/upload/file/{yyyy}{mm}{dd}/{time}{rand:6}'
 	}
     this._element = element
     this._config  = $.extend(this._default,config)
@@ -175,7 +176,8 @@ class Upload {
 		xhr.addEventListener("readystatechange",this.readystatechange,false);*/
 		
 		this._showProgress()
-
+		this._createSaveServerFilename();
+		return;
 		for(let i = 0;i < _length; i++){
 			if(this.error < 0){
 				this._removeProgress()
@@ -214,7 +216,7 @@ class Upload {
 			//总分块数量
 			form_data.delete('totalBlocks')
 			form_data.append('totalBlocks',_length)
-			xhr.open("POST", this._config.uploadUrl,false);		//同步才能拿到 	this.server_location 的值
+			xhr.open("POST", this._config.uploadUrl,false);		//同步才能拿到 	this.server_location 的值   但是要处理完上传才会处理UI线程
 			xhr.send(form_data);
 		}
 		
@@ -283,6 +285,30 @@ class Upload {
 	  this._progress_obj.remove()
 	  this._progress_obj = null
 	  this._progress_status == 0
+  }
+  
+  //前端生成服务端存储文件名
+  _createSaveServerFilename(){
+	  this._config
+	  let t = parseInt(Date.parse(new Date())/1000);
+	  console.log(this._getFormatDate());
+  }
+  
+  //获取格式化时间
+  _getFormatDate(){
+	  let date = new Date();
+	  let month = date.getMonth() + 1;
+	  let strDate = date.getDate();
+	  if (month >= 1 && month <= 9) {
+		  month = "0" + month;
+	  }
+	  if (strDate >= 0 && strDate <= 9) {
+		  strDate = "0" + strDate;
+	  }
+	  let currentdate = date.getFullYear() + '-' + month + '-' + strDate
+	        + "-" + date.getHours() + '-' + date.getMinutes()
+	        + '-' + date.getSeconds();
+	  return currentdate;
   }
 
   // Static
