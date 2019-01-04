@@ -61,8 +61,8 @@ class Upload {
 		'startBtn':'',
 		'uploadKey':'bs.upload',
 		'uploadProgress':'',
-		'blockSize':2048000					//分片大小 2MB
-		'filePathConfig':'/upload/file/{yyyy}{mm}{dd}/{time}{rand:6}'
+		'blockSize':2048000,					//分片大小 2MB
+		'filePathConfig':'/upload/file/{yyyy}{mm}{dd}/{time}'
 	}
     this._element = element
     this._config  = $.extend(this._default,config)
@@ -73,6 +73,7 @@ class Upload {
 	this.file_suffix = ''					//文件后缀
 	this.server_location = ''				//上传至服务器后 在服务器上的相对路径
 	this.error = 0							//服务器返回错误代码
+	this._success_index = 0					//成功上传的区块数
 	
     //console.log(this._config)
     this._timeout = null
@@ -109,7 +110,8 @@ class Upload {
 				this._files_arr = file_obj
 			}
 		}
-		
+		//前端生成文件路径
+		this._createSaveServerFilename();
 		//如果有上传按钮 则点击按钮执行上传 否则直接上传
 		let start_btn = $(this._config['startBtn'])
 		if(start_btn.length > 0){
@@ -175,9 +177,9 @@ class Upload {
 		xhr.addEventListener("error", this._config.uploadFailed, false);
 		xhr.addEventListener("readystatechange",this.readystatechange,false);*/
 		
+		//显示进度条
 		this._showProgress()
-		this._createSaveServerFilename();
-		return;
+
 		for(let i = 0;i < _length; i++){
 			if(this.error < 0){
 				this._removeProgress()
@@ -185,16 +187,18 @@ class Upload {
 				return;
 			}
 			let xhr = new XMLHttpRequest();
-			xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
+			//xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
 			xhr.addEventListener("load", this.uploadComplete, false);
 			xhr.addEventListener("error", this._config.uploadFailed, false);
 			xhr.addEventListener("readystatechange",()=>{
 				if(xhr.readyState === 4 && xhr.status === 200){
 			        let res = JSON.parse(xhr.response)
-			        this.server_location = res.url
+			        //this.server_location = res.url
 			        //console.log(this)
 			        this.error = res.error
-			        this._updateProgress(res.progress)
+					//异步策略进度应由前端计算 而不是由服务端返回
+					this._success_index++
+			        this._updateProgress(this._calculate())
 				}
 			},false);
 			
@@ -216,7 +220,7 @@ class Upload {
 			//总分块数量
 			form_data.delete('totalBlocks')
 			form_data.append('totalBlocks',_length)
-			xhr.open("POST", this._config.uploadUrl,false);		//同步才能拿到 	this.server_location 的值   但是要处理完上传才会处理UI线程
+			xhr.open("POST", this._config.uploadUrl);		//同步才能拿到 this.server_location 的值   但是要处理完上传才会处理UI线程 所以采用客户端生成路径 发送到后端 继续采用异步的策略
 			xhr.send(form_data);
 		}
 		
@@ -289,26 +293,46 @@ class Upload {
   
   //前端生成服务端存储文件名
   _createSaveServerFilename(){
-	  this._config
 	  let t = parseInt(Date.parse(new Date())/1000);
-	  console.log(this._getFormatDate());
+	  let d = this._getFormatDate().split('-')
+	  let format = this._config.filePathConfig
+	  format = format.replace('{yyyy}',d[0]).replace('{mm}',d[1]).replace('{dd}',d[2]).replace('{hh}',d[3]).replace('{ii}',d[4]).replace('{ss}',d[5]).replace('{time}',t)
+	  //todo  {filename} {rand}
+	  this.server_location = format+this.file_suffix
   }
   
   //获取格式化时间
   _getFormatDate(){
 	  let date = new Date();
+	  let year = date.getFullYear()
 	  let month = date.getMonth() + 1;
-	  let strDate = date.getDate();
-	  if (month >= 1 && month <= 9) {
-		  month = "0" + month;
+	  let day = date.getDate();
+	  let hours = date.getHours()
+	  let minutes = date.getMinutes()
+	  let seconds = date.getSeconds()
+	
+	  let _formatDate = year + '-' + this._pad(month) + '-' + this._pad(day)
+	        + "-" + this._pad(hours) + '-' + this._pad(minutes)
+	        + '-' + this._pad(seconds);
+			
+	  return _formatDate;
+  }
+  
+  _pad(str){
+	  if(str.toString().length < 2){
+		  return '0'+str;
 	  }
-	  if (strDate >= 0 && strDate <= 9) {
-		  strDate = "0" + strDate;
+	  return str
+  }
+  
+  //计算进度
+  _calculate(){
+	  let total = this._files_arr.length;
+	  if(total == 0){
+		  throw new Error(`文件数组还未初始化完成`)
+		  return;
 	  }
-	  let currentdate = date.getFullYear() + '-' + month + '-' + strDate
-	        + "-" + date.getHours() + '-' + date.getMinutes()
-	        + '-' + date.getSeconds();
-	  return currentdate;
+	  return parseInt(this._success_index / total * 100)
   }
 
   // Static

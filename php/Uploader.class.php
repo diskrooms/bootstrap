@@ -345,7 +345,7 @@ class Uploader
      */
     private function getFullName()
     {
-        if(intval($_POST['i']) == 0){
+        /*if(intval($_POST['i']) == 0){
             //替换日期事件
             $t = time();
             $d = explode('-', date("Y-y-m-d-H-i-s"));
@@ -375,7 +375,9 @@ class Uploader
         } else {
             $server_location = trim(addslashes($_POST['server_location']));
             return $server_location;
-        }
+        }*/
+		$server_location = trim(addslashes($_POST['server_location']));
+        return $server_location;
     }
 
     /**

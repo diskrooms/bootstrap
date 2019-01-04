@@ -7071,8 +7071,9 @@
         'startBtn': '',
         'uploadKey': 'bs.upload',
         'uploadProgress': '',
-        'blockSize': 2048000 //分片大小 2MB
-
+        'blockSize': 2048000,
+        //分片大小 2MB
+        'filePathConfig': '/upload/file/{yyyy}{mm}{dd}/{time}'
       };
       this._element = element;
       this._config = $.extend(this._default, config);
@@ -7087,6 +7088,8 @@
       this.server_location = ''; //上传至服务器后 在服务器上的相对路径
 
       this.error = 0; //服务器返回错误代码
+
+      this._success_index = 0; //成功上传的区块数
       //console.log(this._config)
 
       this._timeout = null;
@@ -7128,7 +7131,10 @@
           } else {
             _this._files_arr = file_obj;
           }
-        } //如果有上传按钮 则点击按钮执行上传 否则直接上传
+        } //前端生成文件路径
+
+
+        _this._createSaveServerFilename(); //如果有上传按钮 则点击按钮执行上传 否则直接上传
 
 
         var start_btn = $(_this._config['startBtn']);
@@ -7193,6 +7199,7 @@
         xhr.addEventListener("load", this.uploadComplete, false);
         xhr.addEventListener("error", this._config.uploadFailed, false);
         xhr.addEventListener("readystatechange",this.readystatechange,false);*/
+        //显示进度条
         this._showProgress();
 
         var _loop = function _loop(i) {
@@ -7205,19 +7212,20 @@
             };
           }
 
-          var xhr = new XMLHttpRequest();
-          xhr.upload.addEventListener("progress", _this2.uploadProgress(_this2), false); //监听上传进度
+          var xhr = new XMLHttpRequest(); //xhr.upload.addEventListener("progress", this.uploadProgress(this), false);//监听上传进度
 
           xhr.addEventListener("load", _this2.uploadComplete, false);
           xhr.addEventListener("error", _this2._config.uploadFailed, false);
           xhr.addEventListener("readystatechange", function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
-              var res = JSON.parse(xhr.response);
-              _this2.server_location = res.url; //console.log(this)
+              var res = JSON.parse(xhr.response); //this.server_location = res.url
+              //console.log(this)
 
-              _this2.error = res.error;
+              _this2.error = res.error; //异步策略进度应由前端计算 而不是由服务端返回
 
-              _this2._updateProgress(res.progress);
+              _this2._success_index++;
+
+              _this2._updateProgress(_this2._calculate());
             }
           }, false);
           form_data.delete(_this2._config.uploadKey);
@@ -7240,7 +7248,7 @@
 
           form_data.delete('totalBlocks');
           form_data.append('totalBlocks', _length);
-          xhr.open("POST", _this2._config.uploadUrl, false); //同步才能拿到 	this.server_location 的值
+          xhr.open("POST", _this2._config.uploadUrl); //同步才能拿到 this.server_location 的值   但是要处理完上传才会处理UI线程 所以采用客户端生成路径 发送到后端 继续采用异步的策略
 
           xhr.send(form_data);
         };
@@ -7310,6 +7318,53 @@
 
       this._progress_obj = null;
       this._progress_status == 0;
+    } //前端生成服务端存储文件名
+    ;
+
+    _proto._createSaveServerFilename = function _createSaveServerFilename() {
+      var t = parseInt(Date.parse(new Date()) / 1000);
+
+      var d = this._getFormatDate().split('-');
+
+      var format = this._config.filePathConfig;
+      format = format.replace('{yyyy}', d[0]).replace('{mm}', d[1]).replace('{dd}', d[2]).replace('{hh}', d[3]).replace('{ii}', d[4]).replace('{ss}', d[5]).replace('{time}', t); //todo  {filename} {rand}
+
+      this.server_location = format + this.file_suffix;
+    } //获取格式化时间
+    ;
+
+    _proto._getFormatDate = function _getFormatDate() {
+      var date = new Date();
+      var year = date.getFullYear();
+      var month = date.getMonth() + 1;
+      var day = date.getDate();
+      var hours = date.getHours();
+      var minutes = date.getMinutes();
+      var seconds = date.getSeconds();
+
+      var _formatDate = year + '-' + this._pad(month) + '-' + this._pad(day) + "-" + this._pad(hours) + '-' + this._pad(minutes) + '-' + this._pad(seconds);
+
+      return _formatDate;
+    };
+
+    _proto._pad = function _pad(str) {
+      if (str.toString().length < 2) {
+        return '0' + str;
+      }
+
+      return str;
+    } //计算进度
+    ;
+
+    _proto._calculate = function _calculate() {
+      var total = this._files_arr.length;
+
+      if (total == 0) {
+        throw new Error("\u6587\u4EF6\u6570\u7EC4\u8FD8\u672A\u521D\u59CB\u5316\u5B8C\u6210");
+        return;
+      }
+
+      return parseInt(this._success_index / total * 100);
     } // Static
     ;
 
@@ -7322,62 +7377,6 @@
 
         data = new Upload(this, _config);
         $element.data(DATA_KEY$c, data);
-      }
-    };
-
-    Upload._jQueryGlobalInterface = function _jQueryGlobalInterface(action, options) {
-      //参数过滤
-      if (action == null) {
-        action = 'show';
-        options = {};
-      } else if (typeof action === 'object') {
-        action = 'show';
-        options = action;
-      }
-
-      if (action == 'show') {
-        var defaults = {
-          opacity: 1,
-          //loading页面透明度
-          backgroundColor: "#000000c0",
-          //loading页面背景色
-          borderColor: "#bbb",
-          //提示边框颜色
-          borderWidth: 1,
-          //提示边框宽度
-          borderStyle: "solid",
-          //提示边框样式
-          loadingTips: "正在加载,请稍等",
-          //提示文本
-          TipsColor: "#ff922b",
-          //提示颜色
-          delayTime: 1000,
-          //页面加载完成后，加载页面渐出速度
-          zindex: 999,
-          //loading页面层次
-          sleep: 0 //设置挂起,等于0时则无需挂起
-
-        };
-        options = $.extend(defaults, options);
-
-        if (!this.__show_loading) {
-          var _PageHeight = document.documentElement.clientHeight,
-              _PageWidth = document.documentElement.clientWidth;
-
-          var _config_tpl = "<div id=\"loadingPage\" style=\"position:fixed;left:0;top:0;_position: absolute;width:100%;height:" + _PageHeight + "px;background:" + options.backgroundColor + ";opacity:" + options.opacity + ";filter:alpha(opacity=" + options.opacity + " * 100);z-index:" + options.zindex + ";\"><div class=\"loadingMsg\"><i class='fa fa-spinner anim anim-rotate anim-loop' style='margin-right:10px;'></i>" + options.loadingTips + "</div></div>";
-
-          var _tpl = typeof options === 'object' ? options.tpl || _config_tpl : _config_tpl;
-
-          var $loading = $(_tpl);
-          $('body').append($loading.addClass('fade in'));
-          $loading.loading('show');
-          this._element = $loading;
-          this.__show_loading = 1;
-        }
-      } else {
-        this._element.loading('hide');
-
-        this.__show_loading = 0;
       }
     };
 
