@@ -62,7 +62,7 @@ class Upload {
 		'uploadKey':'bs.upload',
 		'uploadProgress':'',
 		'blockSize':2048000,					//分片大小 2MB
-		'filePathConfig':'/upload/file/{yyyy}{mm}{dd}/{time}'
+		'filePathConfig':'/upload/file/{yyyy}{mm}{dd}/{time}',
 	}
     this._element = element
     this._config  = $.extend(this._default,config)
@@ -70,6 +70,8 @@ class Upload {
 	this._progress_status = 0				//进度条初始化状态 0 未初始化 1 已初始化
 	this._progress_obj = null				//进度条 jQuery 对象
 	
+	this._files_arr = []					//文件分片存放数组
+	this._files_arr_length					//文件分片存放数组元素个数
 	this.file_suffix = ''					//文件后缀
 	this.server_location = ''				//上传至服务器后 在服务器上的相对路径
 	this.error = 0							//服务器返回错误代码
@@ -109,6 +111,7 @@ class Upload {
 			} else {
 				this._files_arr = file_obj
 			}
+			this._files_arr_length = this._files_arr.length
 		}
 		//前端生成文件路径
 		this._createSaveServerFilename();
@@ -120,9 +123,28 @@ class Upload {
 			this.startUpload()
 		}
 		
-		let upload_progress = null
+		/*let upload_progress = null
 		if(upload_progress = $(this._config['uploadProgress'])){
 			this._progress_container = upload_progress
+		}*/
+	})
+	//设置代理观察 _success_index 的值
+	this.observer = new Proxy(this,{
+		set:function(target,key){
+			if(key == '_success_index'){
+				target._success_index++
+			}
+			if(target._success_index == target._files_arr_length){
+				$.post(target._config.uploadUrl,{'finish':1,'server_location':target.server_location,'totalBlocks':target._files_arr_length},function(res){
+					if(res.state == 'SUCCESS'){
+						target._progress_obj.find('.box-header .box-title').html('上传完成')
+						setTimeout(function(){
+							target._removeProgress()
+						},1000)
+					}
+				},'json')
+			}
+			return true;
 		}
 	})
   }
@@ -166,8 +188,8 @@ class Upload {
 		throw new Error(`目前使用的浏览器不支持FormData上传方式,请更换最新版的Chrome或Firefox浏览器`)
 		return;
 	} 
-	let _length = this._files_arr.length
-	if(_length == 0){
+
+	if(this._files_arr_length == 0){
 		throw new Error(`文件数组还未初始化完成,无法上传`)
 		return;
 	} else {
@@ -180,7 +202,7 @@ class Upload {
 		//显示进度条
 		this._showProgress()
 
-		for(let i = 0;i < _length; i++){
+		for(let i = 0;i < this._files_arr_length; i++){
 			if(this.error < 0){
 				this._removeProgress()
 				//todo 提示错误
@@ -197,7 +219,7 @@ class Upload {
 			        //console.log(this)
 			        this.error = res.error
 					//异步策略进度应由前端计算 而不是由服务端返回
-					this._success_index++
+			        this.observer._success_index++
 			        this._updateProgress(this._calculate())
 				}
 			},false);
@@ -219,7 +241,7 @@ class Upload {
 			}
 			//总分块数量
 			form_data.delete('totalBlocks')
-			form_data.append('totalBlocks',_length)
+			form_data.append('totalBlocks',this._files_arr_length)
 			xhr.open("POST", this._config.uploadUrl);		//同步才能拿到 this.server_location 的值   但是要处理完上传才会处理UI线程 所以采用客户端生成路径 发送到后端 继续采用异步的策略
 			xhr.send(form_data);
 		}
